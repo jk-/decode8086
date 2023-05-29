@@ -104,8 +104,9 @@ int main(int argc, char **argv) {
 
     fclose(f);
 
+    // todo conintue..
     // raw_data is the file bytes, not the instruction bytes
-    // so if we have more than one instruction, the size of in the
+    // so if we have more than one instruction, the size of the
     // instruction data will tell us how much to offset for the next instruction
 
     InstructionData instruction_data = instruction_table[raw_data[0]];
