@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <assert.h>
+#include <string.h>
 
 typedef unsigned int uint;
 typedef uint8_t      uint8;
@@ -51,6 +52,7 @@ typedef struct {
 
 typedef struct {
     InstructionData data;
+    uint            offset;
     uint16          fields;
 } Instruction;
 
@@ -82,42 +84,28 @@ const char *get_instruction_name(TYPE type) {
     switch (type) {
         case MOV: return "mov";
         default:
-            return "<invalid>";
+            return "<unknown>";
     };
 };
 
-int main(int argc, char **argv) {
-    if (argc < 2) {
-        printf("Missing file to decode. Usage: decode <filename>\n");
-        return 0;
+
+int parse_instruction(Instruction *instruction, const uint8 *data, uint size, uint offset) {
+    InstructionData instruction_data;
+    uint8 *raw = data + offset;
+    memset(instruction, 0, sizeof(*instruction));
+
+    instruction_data = instruction_table[raw[0]];
+
+    if (offset + instruction_data.size > size) {
+        fprintf(stderr, "Out of bounds parsing instruction");
+        return -1;
     }
-
-    size_t size = 0;
-    FILE *f = fopen(argv[1], "r");
-    assert(f != NULL);
-    assert(fseek(f, 0, SEEK_END) == 0);
-    size = ftell(f);
-    assert(fseek(f, 0, SEEK_SET) == 0);
-
-    uint8 *raw_data = (uint8 *) malloc(size);
-    assert(fread(raw_data, size, 1, f) == 1);
-
-    fclose(f);
-
-    // todo conintue..
-    // raw_data is the file bytes, not the instruction bytes
-    // so if we have more than one instruction, the size of the
-    // instruction data will tell us how much to offset for the next instruction
-
-    InstructionData instruction_data = instruction_table[raw_data[0]];
-
-    Instruction instruction = {0};
 
     // set fields for [mod ... r/m]
     switch (instruction_data.format) {
         case RM_REG:
-            instruction.fields |= (MOD(raw_data[1]) & MASK_MOD) << 0;
-            instruction.fields |= (RM(raw_data[1])  & MASK_RM)  << 4;
+            instruction->fields |= (MOD(raw[1]) & MASK_MOD) << 0;
+            instruction->fields |= (RM(raw[1])  & MASK_RM)  << 4;
         default:
             break;
     };
@@ -125,20 +113,90 @@ int main(int argc, char **argv) {
     // set fields for reg
     switch (instruction_data.format) {
         case RM_REG:
-            instruction.fields |= (REG(raw_data[1]) & MASK_REG) << 7;
+            instruction->fields |= (REG(raw[1]) & MASK_REG) << 7;
         default:
             break;
     };
 
-    instruction.data = instruction_data;
+    instruction->offset = offset;
+    instruction->data = instruction_data;
+    return 0;
+};
 
+int scan_instructions(Instruction *const instructions, uint count, uint8 *const data, uint size) {
+    uint i;
+    uint offset = 0;
+    Instruction instruction;
+
+    // we want to scan and return a count
+    // so we can allocate memory for all the instructions
+    if (!instructions) {
+        for (count = 0; offset < size; ++count) {
+            if (parse_instruction(&instruction, data, size, offset) < 0) {
+                return -1;
+            }
+            offset += instruction.data.size;
+        }
+        return count;
+    }
+
+    for (i = 0; i < count && offset < size; ++i) {
+        if (parse_instruction(instructions + i, data, size, offset) < 0) {
+            return -1;
+        }
+        offset += instructions[i].data.size;
+    }
+    return 0;
+}; 
+
+void decode_instruction(FILE *out, Instruction *instruction) {
     uint8 w;
-    w = W(instruction_data.flags);
-    printf("bits 16\n\n");
-    printf("%s ",  get_instruction_name(instruction.data.type));    
-    printf("%s, ", regs[w][FIELD_RM(instruction.fields)]); 
-    printf("%s\n", regs[w][FIELD_REG(instruction.fields)]); 
+    w = W(instruction->data.flags);
+    fprintf(out, "%s ",  get_instruction_name(instruction->data.type));    
+    fprintf(out, "%s, ", regs[w][FIELD_RM(instruction->fields)]); 
+    fprintf(out, "%s\n", regs[w][FIELD_REG(instruction->fields)]); 
+};
+
+
+int main(int argc, char **argv) {
+    if (argc < 2) {
+        printf("Missing file to decode. Usage: decode <filename>\n");
+        return 0;
+    }
+
+    uint size = 0;
+    FILE *f = fopen(argv[1], "rb");
+    assert(f != NULL);
+    assert(fseek(f, 0, SEEK_END) == 0);
+    size = ftell(f);
+    rewind(f);
+
+    uint8 *raw_data = malloc(size);
+    if (raw_data == NULL) exit(137);
+    assert(fread(raw_data, size, 1, f) == 1);
+
+    fclose(f);
+
+    int instruction_count = 0;
+    Instruction *instructions;
+
+    instruction_count = scan_instructions(NULL, 0, raw_data, size);
+    if (instruction_count < 0) return 0;
+
+    instructions = malloc(instruction_count * sizeof(Instruction));
+    if (instructions == NULL) exit(137);
+
+    scan_instructions(instructions, instruction_count, raw_data, size);
+
+    int i;
+    uint offset;
+
+    fprintf(stdout, "bits 16\n\n");
+    for (i=0, offset=0; i < instruction_count && offset < size; ++i, offset += instructions[i].data.size) {
+        decode_instruction(stdout, instructions + i);
+    }
 
     free(raw_data);
+    free(instructions);
     return 0;
 }
