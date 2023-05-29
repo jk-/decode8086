@@ -91,7 +91,7 @@ int main(int argc, char **argv) {
         printf("Missing file to decode. Usage: decode <filename>\n");
         return 0;
     }
-    
+
     size_t size = 0;
     FILE *f = fopen(argv[1], "r");
     assert(f != NULL);
@@ -99,11 +99,14 @@ int main(int argc, char **argv) {
     size = ftell(f);
     assert(fseek(f, 0, SEEK_SET) == 0);
 
-    uint8_t *raw_data = malloc(size);
-    if (raw_data == NULL) exit(127);
+    uint8 *raw_data = (uint8 *) malloc(size);
     assert(fread(raw_data, size, 1, f) == 1);
 
     fclose(f);
+
+    // raw_data is the file bytes, not the instruction bytes
+    // so if we have more than one instruction, the size of in the
+    // instruction data will tell us how much to offset for the next instruction
 
     InstructionData instruction_data = instruction_table[raw_data[0]];
 
@@ -134,7 +137,6 @@ int main(int argc, char **argv) {
     printf("%s ",  get_instruction_name(instruction.data.type));    
     printf("%s, ", regs[w][FIELD_RM(instruction.fields)]); 
     printf("%s\n", regs[w][FIELD_REG(instruction.fields)]); 
-
 
     free(raw_data);
     return 0;
