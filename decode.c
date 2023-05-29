@@ -32,12 +32,13 @@ typedef int16_t      int16;
 #define REG(byte)  ((byte >> 3) & MASK_REG)
 #define REG2(byte) ((byte >> 0) & MASK_REG)
 
-#define FIELD_RM(fields)  ((fields >> 4) & MASK_RM)
-#define FIELD_REG(fields) ((fields >> 7) & MASK_REG)
+#define FIELD_MOD(fields)  ((fields >> 0) & MASK_MOD)
+#define FIELD_RM(fields)   ((fields >> 4) & MASK_RM)
+#define FIELD_REG(fields)  ((fields >> 7) & MASK_REG)
 
 #define W(flags) (!!(flags & MASK_W))
 
-static const char *regs[2][8] = {
+static char *regs[2][8] = {
     { "al", "cl", "dl", "bl", "ah", "ch", "dh", "bh" },
     { "ax", "cx", "dx", "bx", "sp", "bp", "si", "di" }
 };
@@ -56,6 +57,7 @@ typedef struct {
     TYPE   type;
     FORMAT format;
     uint8  flags;
+    uint8  prefixes;
     uint8  size;
 } InstructionData;
 
@@ -69,26 +71,26 @@ typedef struct {
 
 InstructionData instruction_table[0xC0] = {
           // TYPE, FORMAT     ,  FLAGS,       SIZE 
-    [0x88]= { MOV, RM_REG,  0,              2 }, // 0x88
-            { MOV, RM_REG,  MASK_W,         2 }, // 0x89
-            { MOV, RM_REG,  MASK_D,         2 }, // 0x8A
-            { MOV, RM_REG,  MASK_D|MASK_W,  2 }, // 0x8B
-    [0xB0]= { MOV, REG_IMM, 0,              2 }, // 0xB0
-            { MOV, REG_IMM, 0,              2 }, // 0xB1
-            { MOV, REG_IMM, 0,              2 }, // 0xB2
-            { MOV, REG_IMM, 0,              2 }, // 0xB3
-            { MOV, REG_IMM, 0,              2 }, // 0xB4
-            { MOV, REG_IMM, 0,              2 }, // 0xB5
-            { MOV, REG_IMM, 0,              2 }, // 0xB6
-            { MOV, REG_IMM, 0,              2 }, // 0xB7
-            { MOV, REG_IMM, MASK_W,         3 }, // 0xB8
-            { MOV, REG_IMM, MASK_W,         3 }, // 0xB9
-            { MOV, REG_IMM, MASK_W,         3 }, // 0xBA
-            { MOV, REG_IMM, MASK_W,         3 }, // 0xBB
-            { MOV, REG_IMM, MASK_W,         3 }, // 0xBC
-            { MOV, REG_IMM, MASK_W,         3 }, // 0xBD
-            { MOV, REG_IMM, MASK_W,         3 }, // 0xBE
-            { MOV, REG_IMM, MASK_W,         3 }, // 0xBF
+    [0x88]= { MOV, RM_REG,  0,              0, 2 }, // 0x88
+            { MOV, RM_REG,  MASK_W,         0, 2 }, // 0x89
+            { MOV, RM_REG,  MASK_D,         0, 2 }, // 0x8A
+            { MOV, RM_REG,  MASK_D|MASK_W,  0, 2 }, // 0x8B
+    [0xB0]= { MOV, REG_IMM, 0,              0, 2 }, // 0xB0
+            { MOV, REG_IMM, 0,              0, 2 }, // 0xB1
+            { MOV, REG_IMM, 0,              0, 2 }, // 0xB2
+            { MOV, REG_IMM, 0,              0, 2 }, // 0xB3
+            { MOV, REG_IMM, 0,              0, 2 }, // 0xB4
+            { MOV, REG_IMM, 0,              0, 2 }, // 0xB5
+            { MOV, REG_IMM, 0,              0, 2 }, // 0xB6
+            { MOV, REG_IMM, 0,              0, 2 }, // 0xB7
+            { MOV, REG_IMM, MASK_W,         0, 3 }, // 0xB8
+            { MOV, REG_IMM, MASK_W,         0, 3 }, // 0xB9
+            { MOV, REG_IMM, MASK_W,         0, 3 }, // 0xBA
+            { MOV, REG_IMM, MASK_W,         0, 3 }, // 0xBB
+            { MOV, REG_IMM, MASK_W,         0, 3 }, // 0xBC
+            { MOV, REG_IMM, MASK_W,         0, 3 }, // 0xBD
+            { MOV, REG_IMM, MASK_W,         0, 3 }, // 0xBE
+            { MOV, REG_IMM, MASK_W,         0, 3 }, // 0xBF
 };
 
 const char *get_instruction_name(TYPE type) {
@@ -118,7 +120,6 @@ int parse_instruction(Instruction *instruction,  uint8 * const data, uint size, 
 
     // set fields for [mod ... r/m]
     switch (instruction_data.format) {
-        case RM_IMM:
         case RM_REG:
             mod = MOD(raw[1]);
             rm  = RM(raw[1]);
@@ -201,9 +202,9 @@ int scan_instructions(Instruction *const instructions, uint count, uint8 *const 
             }
             
             if (instruction.structure.type == UNKNOWN) {
-				fprintf(stderr, "unknown instruction 0x%02X at interation %d\n", data[offset], count);
-				return -2;
-			}
+	        fprintf(stderr, "unknown instruction 0x%02X at interation %d\n", data[offset], count);
+		return -2;
+	    }
 
             offset += instruction.structure.size;
         }
@@ -219,15 +220,158 @@ int scan_instructions(Instruction *const instructions, uint count, uint8 *const 
     return 0;
 }; 
 
-void decode_instruction(FILE *out, Instruction *instruction) {
-    int16 disp = *((int16 *)&instruction->displacement);
-    uint8 w;
-    w = W(instruction->structure.flags);
-    fprintf(out, "%s ",  get_instruction_name(instruction->structure.type));    
-    fprintf(out, "%s, ", regs[w][FIELD_RM(instruction->fields)]); 
-    fprintf(out, "%s\n", regs[w][FIELD_REG(instruction->fields)]); 
-};
+typedef void (*decode_fn)(FILE *, Instruction *);
 
+static void decode_rm   (FILE *out, Instruction *inst);
+static void decode_reg  (FILE *out, Instruction *inst);
+static void decode_imm  (FILE *out, Instruction *inst);
+/*
+static void decode_sr   (FILE *out, Instruction *inst);
+static void decode_v    (FILE *out, Instruction *inst);
+static void decode_acc  (FILE *out, Instruction *inst);
+static void decode_dx   (FILE *out, Instruction *inst);
+static void decode_imm8 (FILE *out, Instruction *inst);
+static void decode_mem  (FILE *out, Instruction *inst);
+static void decode_addr (FILE *out, Instruction *inst);
+static void decode_naddr(FILE *out, Instruction *inst);
+static void decode_faddr(FILE *out, Instruction *inst);
+*/
+
+void decode_rm(FILE *out, Instruction *instruction)
+{
+	int   len;
+	char  ea_str[64];
+	char *op;
+
+	uint8  w, mod, r_m;
+
+	int16 disp = *((int16 *)&instruction->displacement);
+
+	static char *ea_base[8] =
+	{
+		"bx + si",
+		"bx + di",
+		"bp + si",
+		"bp + di",
+		"si",
+		"di",
+		"bp",
+		"bx",
+	};
+
+	w   = W(instruction->structure.flags);
+	mod = FIELD_MOD(instruction->fields);
+	r_m = FIELD_RM(instruction->fields);
+
+	op = regs[w][r_m];
+
+	if (mod != MODE_REG) {
+		if (mod == MODE_MEM0 && r_m == 0b110) {
+			len = snprintf(ea_str, sizeof(ea_str), "[%u]",
+			               disp & 0xFFFF);
+		} else {
+			// [ ea_base + d8 ]
+			if (mod == MODE_MEM8) {
+				// only low byte
+				disp &= 0x00FF;
+				// if sign bit is set then sign-extend
+				if (disp & 0x80) disp |= 0xFF00;
+
+			// [ ea_base ]
+			} else if (mod == MODE_MEM0) {
+				// no displacement
+				disp = 0;
+			}
+
+			len = snprintf(ea_str, sizeof(ea_str), "[%s",
+			               ea_base[r_m]);
+			if (disp != 0) {
+				len += snprintf(ea_str + len,
+				                sizeof(ea_str) - len, " %c %d",
+				                (disp < 0) ? '-' : '+',
+				                abs(disp));
+			}
+
+			len += snprintf(ea_str + len, sizeof(ea_str) - len,
+			                "]");
+		}
+
+		op = ea_str;
+                /*
+		if (instruction->structure.prefixes & PFX_WIDE) {
+			fprintf(out, "%s ", w ? "word" : "byte");
+		}
+
+		if (instruction->structure.prefixes & PFX_SGMNT) {
+			fprintf(out, "%s:", segregs[SGMNT_OP(instruction->structure.prefixes)]);
+		}*/
+	}
+
+	fprintf(out, "%s", op);
+}
+
+void decode_reg(FILE *out, Instruction *instruction)
+{
+	uint8 w, reg;
+
+	w   = W(instruction->structure.flags);
+	reg = FIELD_REG(instruction->fields);
+
+	fprintf(out, "%s", regs[w][reg]);
+}
+
+void decode_imm(FILE *out, Instruction *instruction)
+{
+	int16 imm = *((int16 *)&instruction->data);
+	fprintf(out, "%d", imm);
+}
+
+int decode_instruction(FILE *out, Instruction *instruction)
+{
+	decode_fn op1 = NULL, op2 = NULL, tmp;
+
+	if (!out || !instruction) {
+	    fprintf(stderr, "invalid arguments (out: %p, image: %p)\n", out, instruction);
+	    return -1;
+	}
+
+	//if (instruction->structure.flags & F_LB) {
+	//    fprintf(out, "label_%u:\n", instruction->offset);
+	//}
+
+	fprintf(out, "%s", get_instruction_name(instruction->structure.type));
+
+	//if (instruction->structure.prefixes & PFX_FAR) fprintf(out, " far");
+
+	switch (instruction->structure.format) {
+	case RM_REG:
+	    op1 = decode_rm;
+	    op2 = decode_reg;
+	    break;
+	case REG_IMM:
+	    op1 = decode_reg;
+	    op2 = decode_imm;
+	    break;
+	}
+
+	if (instruction->structure.flags & MASK_D) {
+		tmp = op1;
+		op1 = op2;
+		op2 = tmp;
+	}
+
+	if (op1) {
+		fputc(' ', out);
+		op1(out, instruction);
+	}
+
+	if (op2) {
+		fprintf(out, ", ");
+		op2(out, instruction);
+	}
+
+	return 0;
+}
 
 int main(int argc, char **argv) {
     if (argc < 2) {
@@ -265,6 +409,7 @@ int main(int argc, char **argv) {
     fprintf(stdout, "bits 16\n\n");
     for (i=0, offset=0; i < instruction_count && offset < size; ++i, offset += instructions[i].structure.size) {
         decode_instruction(stdout, instructions + i);
+        fputc('\n', stdout);
     }
 
     free(raw_data);
