@@ -11,10 +11,10 @@ typedef uint32_t     uint32;
 typedef int8_t       int8;
 typedef int16_t      int16;
 
-#define MASK_W    0b001
-#define MASK_D    0b010
-#define MASK_S    0b100
-#define MASK_V    0b1000
+#define MASK_W  (0b1  << 0)
+#define MASK_D  (0b1  << 1)
+#define MASK_S  (0b1  << 2)
+#define MASK_V  (0b1  << 3)
 #define MASK_ES  (0b00 << 4)
 #define MASK_CS  (0b01 << 4)
 #define MASK_SS  (0b10 << 4)
@@ -22,7 +22,7 @@ typedef int16_t      int16;
 #define MASK_MO  (0b1  << 6) // memory only
 #define MASK_LB  (0b1  << 7) // has label
 
-#define MASK_MOD  0b011
+#define MASK_MOD  0b11
 #define MASK_RM   0b111
 #define MASK_REG  0b111
 
@@ -31,11 +31,8 @@ typedef int16_t      int16;
 #define MODE_MEM16 0b10
 #define MODE_REG   0b11
 
-
-// implicit prefixes
 #define PFX_WIDE     (0b1  << 0)
 #define PFX_FAR      (0b1  << 1)
-// explicit prefixes
 #define PFX_LOCK     (0b1  << 2)
 #define PFX_SGMNT    (0b1  << 3)
 #define PFX_SGMNT_ES (0b00 << 4)
@@ -45,22 +42,26 @@ typedef int16_t      int16;
 #define PFX_REP      (0b1  << 6)
 #define PFX_REPNE    (0b1  << 7)
 
-#define SGMNT_OP(prefixes) (((prefixes) >> 4) & 0b11)
+#define SR_OP(flags) (((flags) >> 4) & 0b11)
+#define W(flags) (!!(flags & MASK_W))
 
-#define MOD(byte)  ((byte >> 6) & MASK_MOD)
-#define RM(byte)   ((byte >> 0) & MASK_RM)
-#define REG(byte)  ((byte >> 3) & MASK_REG)
-#define REG2(byte) ((byte >> 0) & MASK_REG)
+#define SR(byte)   (((byte) >> 3) & 0b11)
+#define MOD(byte)  (((byte) >> 6) & 0b11)
+#define RM(byte)   (((byte) >> 0) & 0b111)
+#define REG(byte)  (((byte) >> 3) & 0b111)
+#define REG2(byte) (((byte) >> 0) & 0b111)
 #define ESC1(byte) (((byte) >> 0) & 0b111)
 #define ESC2(byte) (((byte) >> 3) & 0b111)
 #define EXTD(byte) (((byte) >> 3) & 0b111)
 
-#define FIELD_MOD(fields)  ((fields >> 0) & MASK_MOD)
-#define FIELD_RM(fields)   ((fields >> 4) & MASK_RM)
-#define FIELD_REG(fields)  ((fields >> 7) & MASK_REG)
+#define SGMNT_OP(prefixes) (((prefixes) >> 4) & 0b11)
+#define FIELD_MOD(fields) (((fields) >>  0) & 0b11)
+#define FIELD_SR(fields)  (((fields) >>  2) & 0b11)
+#define FIELD_RM(fields)  (((fields) >>  4) & 0b111)
+#define FIELD_REG(fields) (((fields) >>  7) & 0b111)
+#define FIELD_ESC(fields) (((fields) >> 10) & 0b111111)
 
-#define W(flags) (!!(flags & MASK_W))
-
+static char *segregs[4] = { "es", "cs", "ss", "ds" };
 static char *regs[2][8] = {
     { "al", "cl", "dl", "bl", "ah", "ch", "dh", "bh" },
     { "ax", "cx", "dx", "bx", "sp", "bp", "si", "di" }
@@ -145,7 +146,6 @@ typedef enum {
     EXTD,
 } TYPE;
 
-
 typedef struct {
     TYPE   type;
     FORMAT format;
@@ -157,269 +157,269 @@ typedef struct {
 typedef struct {
     InstructionData structure;
     uint16          data;
+    uint16          data_ext;
     uint16          displacement;
     uint16          fields;
     uint            offset;
 } Instruction;
 
-
 InstructionData instruction_table[256] = {
-	{ ADD,    RM_REG,    0,            0, 2 }, // 0x00
-	{ ADD,    RM_REG,    MASK_W,          0, 2 }, // 0x01
-	{ ADD,    RM_REG,    MASK_D,          0, 2 }, // 0x02
-	{ ADD,    RM_REG,    MASK_D|MASK_W,      0, 2 }, // 0x03
-	{ ADD,    ACC_IMM,   0,            0, 2 }, // 0x04
-	{ ADD,    ACC_IMM,   MASK_W,          0, 3 }, // 0x05
-	{ PUSH,   SR,        MASK_ES,         0, 1 }, // 0x06
-	{ POP,    SR,        MASK_ES,         0, 1 }, // 0x07
-	{ OR,     RM_REG,    0,            0, 2 }, // 0x08
-	{ OR,     RM_REG,    MASK_W,          0, 2 }, // 0x09
-	{ OR,     RM_REG,    MASK_D,          0, 2 }, // 0x0A
-	{ OR,     RM_REG,    MASK_D|MASK_W,      0, 2 }, // 0x0B
-	{ OR,     ACC_IMM,   0,            0, 2 }, // 0x0C
-	{ OR,     ACC_IMM,   MASK_W,          0, 3 }, // 0x0D
-	{ PUSH,   SR,        MASK_CS,         0, 1 }, // 0x0E
-	{ UNKNOWN,    NONE,      0,            0, 1 }, // 0x0F
-	{ ADC,    RM_REG,    0,            0, 2 }, // 0x10
-	{ ADC,    RM_REG,    MASK_W,          0, 2 }, // 0x11
-	{ ADC,    RM_REG,    MASK_D,          0, 2 }, // 0x12
-	{ ADC,    RM_REG,    MASK_D|MASK_W,      0, 2 }, // 0x13
-	{ ADC,    ACC_IMM,   0,            0, 2 }, // 0x14
-	{ ADC,    ACC_IMM,   MASK_W,          0, 3 }, // 0x15
-	{ PUSH,   SR,        MASK_SS,         0, 1 }, // 0x16
-	{ POP,    SR,        MASK_SS,         0, 1 }, // 0x17
-	{ SBB,    RM_REG,    0,            0, 2 }, // 0x18
-	{ SBB,    RM_REG,    MASK_W,          0, 2 }, // 0x19
-	{ SBB,    RM_REG,    MASK_D,          0, 2 }, // 0x1A
-	{ SBB,    RM_REG,    MASK_D|MASK_W,      0, 2 }, // 0x1B
-	{ SBB,    ACC_IMM,   0,            0, 2 }, // 0x1C
-	{ SBB,    ACC_IMM,   MASK_W,          0, 3 }, // 0x1D
-	{ PUSH,   SR,        MASK_DS,         0, 1 }, // 0x1E
-	{ POP,    SR,        MASK_DS,         0, 1 }, // 0x1F
-	{ AND,    RM_REG,    0,            0, 2 }, // 0x20
-	{ AND,    RM_REG,    MASK_W,          0, 2 }, // 0x21
-	{ AND,    RM_REG,    MASK_D,          0, 2 }, // 0x22
-	{ AND,    RM_REG,    MASK_D|MASK_W,      0, 2 }, // 0x23
-	{ AND,    ACC_IMM,   0,            0, 2 }, // 0x24
-	{ AND,    ACC_IMM,   MASK_W,          0, 3 }, // 0x25
-	{ SGMNT,  NONE,      MASK_ES,         0, 1 }, // 0x26
-	{ DAA,    NONE,      0,            0, 1 }, // 0x27
-	{ SUB,    RM_REG,    0,            0, 2 }, // 0x28
-	{ SUB,    RM_REG,    MASK_W,          0, 2 }, // 0x29
-	{ SUB,    RM_REG,    MASK_D,          0, 2 }, // 0x2A
-	{ SUB,    RM_REG,    MASK_D|MASK_W,      0, 2 }, // 0x2B
-	{ SUB,    ACC_IMM,   0,            0, 2 }, // 0x2C
-	{ SUB,    ACC_IMM,   MASK_W,          0, 3 }, // 0x2D
-	{ SGMNT,  NONE,      MASK_CS,         0, 1 }, // 0x2E
-	{ DAS,    NONE,      0,            0, 1 }, // 0x2F
-	{ XOR,    RM_REG,    0,            0, 2 }, // 0x30
-	{ XOR,    RM_REG,    MASK_W,          0, 2 }, // 0x31
-	{ XOR,    RM_REG,    MASK_D,          0, 2 }, // 0x32
-	{ XOR,    RM_REG,    MASK_D|MASK_W,      0, 2 }, // 0x33
-	{ XOR,    ACC_IMM,   0,            0, 2 }, // 0x34
-	{ XOR,    ACC_IMM,   MASK_W,          0, 3 }, // 0x35
-	{ SGMNT,  NONE,      MASK_SS,         0, 1 }, // 0x36
-	{ AAA,    NONE,      0,            0, 1 }, // 0x37
-	{ CMP,    RM_REG,    0,            0, 2 }, // 0x38
-	{ CMP,    RM_REG,    MASK_W,          0, 2 }, // 0x39
-	{ CMP,    RM_REG,    MASK_D,          0, 2 }, // 0x3A
-	{ CMP,    RM_REG,    MASK_D|MASK_W,      0, 2 }, // 0x3B
-	{ CMP,    ACC_IMM,   0,            0, 2 }, // 0x3C
-	{ CMP,    ACC_IMM,   MASK_W,          0, 3 }, // 0x3D
-	{ SGMNT,  NONE,      MASK_DS,         0, 1 }, // 0x3E
-	{ AAS,    NONE,      0,            0, 1 }, // 0x3F
-	{ INC,    REG,       MASK_W,          0, 1 }, // 0x40
-	{ INC,    REG,       MASK_W,          0, 1 }, // 0x41
-	{ INC,    REG,       MASK_W,          0, 1 }, // 0x42
-	{ INC,    REG,       MASK_W,          0, 1 }, // 0x43
-	{ INC,    REG,       MASK_W,          0, 1 }, // 0x44
-	{ INC,    REG,       MASK_W,          0, 1 }, // 0x45
-	{ INC,    REG,       MASK_W,          0, 1 }, // 0x46
-	{ INC,    REG,       MASK_W,          0, 1 }, // 0x47
-	{ DEC,    REG,       MASK_W,          0, 1 }, // 0x48
-	{ DEC,    REG,       MASK_W,          0, 1 }, // 0x49
-	{ DEC,    REG,       MASK_W,          0, 1 }, // 0x4A
-	{ DEC,    REG,       MASK_W,          0, 1 }, // 0x4B
-	{ DEC,    REG,       MASK_W,          0, 1 }, // 0x4C
-	{ DEC,    REG,       MASK_W,          0, 1 }, // 0x4D
-	{ DEC,    REG,       MASK_W,          0, 1 }, // 0x4E
-	{ DEC,    REG,       MASK_W,          0, 1 }, // 0x4F
-	{ PUSH,   REG,       MASK_W,          0, 1 }, // 0x50
-	{ PUSH,   REG,       MASK_W,          0, 1 }, // 0x51
-	{ PUSH,   REG,       MASK_W,          0, 1 }, // 0x52
-	{ PUSH,   REG,       MASK_W,          0, 1 }, // 0x53
-	{ PUSH,   REG,       MASK_W,          0, 1 }, // 0x54
-	{ PUSH,   REG,       MASK_W,          0, 1 }, // 0x55
-	{ PUSH,   REG,       MASK_W,          0, 1 }, // 0x56
-	{ PUSH,   REG,       MASK_W,          0, 1 }, // 0x57
-	{ POP,    REG,       MASK_W,          0, 1 }, // 0x58
-	{ POP,    REG,       MASK_W,          0, 1 }, // 0x59
-	{ POP,    REG,       MASK_W,          0, 1 }, // 0x5A
-	{ POP,    REG,       MASK_W,          0, 1 }, // 0x5B
-	{ POP,    REG,       MASK_W,          0, 1 }, // 0x5C
-	{ POP,    REG,       MASK_W,          0, 1 }, // 0x5D
-	{ POP,    REG,       MASK_W,          0, 1 }, // 0x5E
-	{ POP,    REG,       MASK_W,          0, 1 }, // 0x5F
-	{ UNKNOWN,    NONE,      0,            0, 1 }, // 0x60
-	{ UNKNOWN,    NONE,      0,            0, 1 }, // 0x61
-	{ UNKNOWN,    NONE,      0,            0, 1 }, // 0x62
-	{ UNKNOWN,    NONE,      0,            0, 1 }, // 0x63
-	{ UNKNOWN,    NONE,      0,            0, 1 }, // 0x64
-	{ UNKNOWN,    NONE,      0,            0, 1 }, // 0x65
-	{ UNKNOWN,    NONE,      0,            0, 1 }, // 0x66
-	{ UNKNOWN,    NONE,      0,            0, 1 }, // 0x67
-	{ UNKNOWN,    NONE,      0,            0, 1 }, // 0x68
-	{ UNKNOWN,    NONE,      0,            0, 1 }, // 0x69
-	{ UNKNOWN,    NONE,      0,            0, 1 }, // 0x6A
-	{ UNKNOWN,    NONE,      0,            0, 1 }, // 0x6B
-	{ UNKNOWN,    NONE,      0,            0, 1 }, // 0x6C
-	{ UNKNOWN,    NONE,      0,            0, 1 }, // 0x6D
-	{ UNKNOWN,    NONE,      0,            0, 1 }, // 0x6E
-	{ UNKNOWN,    NONE,      0,            0, 1 }, // 0x6F
-	{ JO,     JMP_SHORT, 0,            0, 2 }, // 0x70
-	{ JNO,    JMP_SHORT, 0,            0, 2 }, // 0x71
-	{ JB,     JMP_SHORT, 0,            0, 2 }, // 0x72
-	{ JAE,    JMP_SHORT, 0,            0, 2 }, // 0x73
-	{ JE,     JMP_SHORT, 0,            0, 2 }, // 0x74
-	{ JNE,    JMP_SHORT, 0,            0, 2 }, // 0x75
-	{ JBE,    JMP_SHORT, 0,            0, 2 }, // 0x76
-	{ JA,     JMP_SHORT, 0,            0, 2 }, // 0x77
-	{ JS,     JMP_SHORT, 0,            0, 2 }, // 0x78
-	{ JNS,    JMP_SHORT, 0,            0, 2 }, // 0x79
-	{ JP,     JMP_SHORT, 0,            0, 2 }, // 0x7A
-	{ JPO,    JMP_SHORT, 0,            0, 2 }, // 0x7B
-	{ JL,     JMP_SHORT, 0,            0, 2 }, // 0x7C
-	{ JGE,    JMP_SHORT, 0,            0, 2 }, // 0x7D
-	{ JLE,    JMP_SHORT, 0,            0, 2 }, // 0x7E
-	{ JG,     JMP_SHORT, 0,            0, 2 }, // 0x7F
-	{ EXTD,   NONE,      0,            0, 0 }, // 0x80
-	{ EXTD,   NONE,      0,            0, 0 }, // 0x81
-	{ EXTD,   NONE,      0,            0, 0 }, // 0x82
-	{ EXTD,   NONE,      0,            0, 0 }, // 0x83
-	{ TEST,   RM_REG,    0,            0, 2 }, // 0x84
-	{ TEST,   RM_REG,    MASK_W,          0, 2 }, // 0x85
-	{ XCHG,   RM_REG,    MASK_D,          0, 2 }, // 0x86
-	{ XCHG,   RM_REG,    MASK_D|MASK_W,      0, 2 }, // 0x87
-	{ MOV,    RM_REG,    0,            0, 2 }, // 0x88
-	{ MOV,    RM_REG,    MASK_W,          0, 2 }, // 0x89
-	{ MOV,    RM_REG,    MASK_D,          0, 2 }, // 0x8A
-	{ MOV,    RM_REG,    MASK_D|MASK_W,      0, 2 }, // 0x8B
-	{ EXTD,   NONE,      0,            0, 0 }, // 0x8C
-	{ LEA,    RM_REG,    MASK_D|MASK_W|MASK_MO, 0, 2 }, // 0x8D
-	{ EXTD,   NONE,      0,            0, 0 }, // 0x8E
-	{ EXTD,   NONE,      0,            0, 0 }, // 0x8F
-	{ NOP,    NONE,      MASK_W,          0, 1 }, // 0x90
-	{ XCHG,   ACC_REG,   MASK_W,          0, 1 }, // 0x91
-	{ XCHG,   ACC_REG,   MASK_W,          0, 1 }, // 0x92
-	{ XCHG,   ACC_REG,   MASK_W,          0, 1 }, // 0x93
-	{ XCHG,   ACC_REG,   MASK_W,          0, 1 }, // 0x94
-	{ XCHG,   ACC_REG,   MASK_W,          0, 1 }, // 0x95
-	{ XCHG,   ACC_REG,   MASK_W,          0, 1 }, // 0x96
-	{ XCHG,   ACC_REG,   MASK_W,          0, 1 }, // 0x97
-	{ CBW,    NONE,      0,            0, 1 }, // 0x98
-	{ CWD,    NONE,      0,            0, 1 }, // 0x99
-	{ CALL,   JMP_FAR,   0,            0, 5 }, // 0x9A
-	{ WAIT,   NONE,      0,            0, 1 }, // 0x9B
-	{ PUSHF,  NONE,      0,            0, 1 }, // 0x9C
-	{ POPF,   NONE,      0,            0, 1 }, // 0x9D
-	{ SAHF,   NONE,      0,            0, 1 }, // 0x9E
-	{ LAHF,   NONE,      0,            0, 1 }, // 0x9F
-	{ MOV,    ACC_MEM,   MASK_MO,         0, 3 }, // 0xA0
-	{ MOV,    ACC_MEM,   MASK_W|MASK_MO,     0, 3 }, // 0xA1
-	{ MOV,    ACC_MEM,   MASK_D|MASK_MO,     0, 3 }, // 0xA2
-	{ MOV,    ACC_MEM,   MASK_D|MASK_W|MASK_MO, 0, 3 }, // 0xA3
-	{ MOVSB,  NONE,      0,            0, 1 }, // 0xA4
-	{ MOVSW,  NONE,      MASK_W,          0, 1 }, // 0xA5
-	{ CMPSB,  NONE,      0,            0, 1 }, // 0xA6
-	{ CMPSW,  NONE,      MASK_W,          0, 1 }, // 0xA7
-	{ TEST,   ACC_IMM,   0,            0, 2 }, // 0xA8
-	{ TEST,   ACC_IMM,   MASK_W,          0, 3 }, // 0xA9
-	{ STOSB,  NONE,      0,            0, 1 }, // 0xAA
-	{ STOSW,  NONE,      0,            0, 1 }, // 0xAB
-	{ LODSB,  NONE,      0,            0, 1 }, // 0xAC
-	{ LODSW,  NONE,      0,            0, 1 }, // 0xAD
-	{ SCASB,  NONE,      0,            0, 1 }, // 0xAE
-	{ SCASW,  NONE,      0,            0, 1 }, // 0xAF
-	{ MOV,    REG_IMM,   0,            0, 2 }, // 0xB0
-	{ MOV,    REG_IMM,   0,            0, 2 }, // 0xB1
-	{ MOV,    REG_IMM,   0,            0, 2 }, // 0xB2
-	{ MOV,    REG_IMM,   0,            0, 2 }, // 0xB3
-	{ MOV,    REG_IMM,   0,            0, 2 }, // 0xB4
-	{ MOV,    REG_IMM,   0,            0, 2 }, // 0xB5
-	{ MOV,    REG_IMM,   0,            0, 2 }, // 0xB6
-	{ MOV,    REG_IMM,   0,            0, 2 }, // 0xB7
-	{ MOV,    REG_IMM,   MASK_W,          0, 3 }, // 0xB8
-	{ MOV,    REG_IMM,   MASK_W,          0, 3 }, // 0xB9
-	{ MOV,    REG_IMM,   MASK_W,          0, 3 }, // 0xBA
-	{ MOV,    REG_IMM,   MASK_W,          0, 3 }, // 0xBB
-	{ MOV,    REG_IMM,   MASK_W,          0, 3 }, // 0xBC
-	{ MOV,    REG_IMM,   MASK_W,          0, 3 }, // 0xBD
-	{ MOV,    REG_IMM,   MASK_W,          0, 3 }, // 0xBE
-	{ MOV,    REG_IMM,   MASK_W,          0, 3 }, // 0xBF
-	{ UNKNOWN,    NONE,      0,            0, 1 }, // 0xC0
-	{ UNKNOWN,    NONE,      0,            0, 1 }, // 0xC1
-	{ RET,    IMM,       MASK_W,          0, 3 }, // 0xC2
-	{ RET,    NONE,      0,            0, 1 }, // 0xC3
-	{ LES,    RM_REG,    MASK_D|MASK_W|MASK_MO, 0, 2 }, // 0xC4
-	{ LDS,    RM_REG,    MASK_D|MASK_W|MASK_MO, 0, 2 }, // 0xC5
-	{ EXTD,   NONE,      0,            0, 0 }, // 0xC6
-	{ EXTD,   NONE,      0,            0, 0 }, // 0xC7
-	{ UNKNOWN,    NONE,      0,            0, 1 }, // 0xC8
-	{ UNKNOWN,    NONE,      0,            0, 1 }, // 0xC9
-	{ RETF,   IMM,       MASK_W,          0, 3 }, // 0xCA
-	{ RETF,   NONE,      0,            0, 1 }, // 0xCB
-	{ INT3,   NONE,      0,            0, 1 }, // 0xCC
-	{ INT,    IMM,       0,            0, 2 }, // 0xCD
-	{ INTO,   NONE,      0,            0, 1 }, // 0xCE
-	{ IRET,   NONE,      0,            0, 1 }, // 0xCF
-	{ EXTD,   NONE,      0,            0, 0 }, // 0xD0
-	{ EXTD,   NONE,      0,            0, 0 }, // 0xD1
-	{ EXTD,   NONE,      0,            0, 0 }, // 0xD2
-	{ EXTD,   NONE,      0,            0, 0 }, // 0xD3
-	{ AAM,    NONE,      0,            0, 2 }, // 0xD4
-	{ AAD,    NONE,      0,            0, 2 }, // 0xD5
-	{ UNKNOWN,    NONE,      0,            0, 1 }, // 0xD6
-	{ XLAT,   NONE,      0,            0, 1 }, // 0xD7
-	{ ESC,    RM_ESC,    MASK_W,          0, 2 }, // 0xD8
-	{ ESC,    RM_ESC,    MASK_W,          0, 2 }, // 0xD9
-	{ ESC,    RM_ESC,    MASK_W,          0, 2 }, // 0xDA
-	{ ESC,    RM_ESC,    MASK_W,          0, 2 }, // 0xDB
-	{ ESC,    RM_ESC,    MASK_W,          0, 2 }, // 0xDC
-	{ ESC,    RM_ESC,    MASK_W,          0, 2 }, // 0xDD
-	{ ESC,    RM_ESC,    MASK_W,          0, 2 }, // 0xDE
-	{ ESC,    RM_ESC,    MASK_W,          0, 2 }, // 0xDF
-	{ LOOPNZ, JMP_SHORT, 0,            0, 2 }, // 0xE0
-	{ LOOPZ,  JMP_SHORT, 0,            0, 2 }, // 0xE1
-	{ LOOP,   JMP_SHORT, 0,            0, 2 }, // 0xE2
-	{ JCXZ,   JMP_SHORT, 0,            0, 2 }, // 0xE3
-	{ IN,     ACC_IMM8,  0,            0, 2 }, // 0xE4
-	{ IN,     ACC_IMM8,  MASK_W,          0, 2 }, // 0xE5
-	{ OUT,    ACC_IMM8,  MASK_D,          0, 2 }, // 0xE6
-	{ OUT,    ACC_IMM8,  MASK_D|MASK_W,      0, 2 }, // 0xE7
-	{ CALL,   JMP_NEAR,  0,            0, 3 }, // 0xE8
-	{ JMP,    JMP_NEAR,  0,            0, 3 }, // 0xE9
-	{ JMP,    JMP_FAR,   0,            0, 5 }, // 0xEA
-	{ JMP,    JMP_SHORT, 0,            0, 2 }, // 0xEB
-	{ IN,     ACC_DX,    0,            0, 1 }, // 0xEC
-	{ IN,     ACC_DX,    MASK_W,          0, 1 }, // 0xED
-	{ OUT,    ACC_DX,    MASK_D,          0, 1 }, // 0xEE
-	{ OUT,    ACC_DX,    MASK_D|MASK_W,      0, 1 }, // 0xEF
-	{ LOCK,   NONE,      0,            0, 1 }, // 0xF0
-	{ UNKNOWN,    NONE,      0,            0, 1 }, // 0xF1
-	{ REPNE,  NONE,      0,            0, 1 }, // 0xF2
-	{ REP,    NONE,      0,            0, 1 }, // 0xF3
-	{ HLT,    NONE,      0,            0, 1 }, // 0xF4
-	{ CMC,    NONE,      0,            0, 1 }, // 0xF5
-	{ EXTD,   NONE,      0,            0, 0 }, // 0xF6
-	{ EXTD,   NONE,      0,            0, 0 }, // 0xF7
-	{ CLC,    NONE,      0,            0, 1 }, // 0xF8
-	{ STC,    NONE,      0,            0, 1 }, // 0xF9
-	{ CLI,    NONE,      0,            0, 1 }, // 0xFA
-	{ STI,    NONE,      0,            0, 1 }, // 0xFB
-	{ CLD,    NONE,      0,            0, 1 }, // 0xFC
-	{ STD,    NONE,      0,            0, 1 }, // 0xFD
-	{ EXTD,   NONE,      0,            0, 0 }, // 0xFE
-	{ EXTD,   NONE,      0,            0, 0 }, // 0xFF
+	{ ADD,     RM_REG,    0,                     0, 2 }, // 0x00
+	{ ADD,     RM_REG,    MASK_W,                0, 2 }, // 0x01
+	{ ADD,     RM_REG,    MASK_D,                0, 2 }, // 0x02
+	{ ADD,     RM_REG,    MASK_D|MASK_W,         0, 2 }, // 0x03
+	{ ADD,     ACC_IMM,   0,                     0, 2 }, // 0x04
+	{ ADD,     ACC_IMM,   MASK_W,                0, 3 }, // 0x05
+	{ PUSH,    SR,        MASK_ES,               0, 1 }, // 0x06
+	{ POP,     SR,        MASK_ES,               0, 1 }, // 0x07
+	{ OR,      RM_REG,    0,                     0, 2 }, // 0x08
+	{ OR,      RM_REG,    MASK_W,                0, 2 }, // 0x09
+	{ OR,      RM_REG,    MASK_D,                0, 2 }, // 0x0A
+	{ OR,      RM_REG,    MASK_D|MASK_W,         0, 2 }, // 0x0B
+	{ OR,      ACC_IMM,   0,                     0, 2 }, // 0x0C
+	{ OR,      ACC_IMM,   MASK_W,                0, 3 }, // 0x0D
+	{ PUSH,    SR,        MASK_CS,               0, 1 }, // 0x0E
+	{ UNKNOWN, NONE,      0,                     0, 1 }, // 0x0F
+	{ ADC,     RM_REG,    0,                     0, 2 }, // 0x10
+	{ ADC,     RM_REG,    MASK_W,                0, 2 }, // 0x11
+	{ ADC,     RM_REG,    MASK_D,                0, 2 }, // 0x12
+	{ ADC,     RM_REG,    MASK_D|MASK_W,         0, 2 }, // 0x13
+	{ ADC,     ACC_IMM,   0,                     0, 2 }, // 0x14
+	{ ADC,     ACC_IMM,   MASK_W,                0, 3 }, // 0x15
+	{ PUSH,    SR,        MASK_SS,               0, 1 }, // 0x16
+	{ POP,     SR,        MASK_SS,               0, 1 }, // 0x17
+	{ SBB,     RM_REG,    0,                     0, 2 }, // 0x18
+	{ SBB,     RM_REG,    MASK_W,                0, 2 }, // 0x19
+	{ SBB,     RM_REG,    MASK_D,                0, 2 }, // 0x1A
+	{ SBB,     RM_REG,    MASK_D|MASK_W,         0, 2 }, // 0x1B
+	{ SBB,     ACC_IMM,   0,                     0, 2 }, // 0x1C
+	{ SBB,     ACC_IMM,   MASK_W,                0, 3 }, // 0x1D
+	{ PUSH,    SR,        MASK_DS,               0, 1 }, // 0x1E
+	{ POP,     SR,        MASK_DS,               0, 1 }, // 0x1F
+	{ AND,     RM_REG,    0,                     0, 2 }, // 0x20
+	{ AND,     RM_REG,    MASK_W,                0, 2 }, // 0x21
+	{ AND,     RM_REG,    MASK_D,                0, 2 }, // 0x22
+	{ AND,     RM_REG,    MASK_D|MASK_W,         0, 2 }, // 0x23
+	{ AND,     ACC_IMM,   0,                     0, 2 }, // 0x24
+	{ AND,     ACC_IMM,   MASK_W,                0, 3 }, // 0x25
+	{ SGMNT,   NONE,      MASK_ES,               0, 1 }, // 0x26
+	{ DAA,     NONE,      0,                     0, 1 }, // 0x27
+	{ SUB,     RM_REG,    0,                     0, 2 }, // 0x28
+	{ SUB,     RM_REG,    MASK_W,                0, 2 }, // 0x29
+	{ SUB,     RM_REG,    MASK_D,                0, 2 }, // 0x2A
+	{ SUB,     RM_REG,    MASK_D|MASK_W,         0, 2 }, // 0x2B
+	{ SUB,     ACC_IMM,   0,                     0, 2 }, // 0x2C
+	{ SUB,     ACC_IMM,   MASK_W,                0, 3 }, // 0x2D
+	{ SGMNT,   NONE,      MASK_CS,               0, 1 }, // 0x2E
+	{ DAS,     NONE,      0,                     0, 1 }, // 0x2F
+	{ XOR,     RM_REG,    0,                     0, 2 }, // 0x30
+	{ XOR,     RM_REG,    MASK_W,                0, 2 }, // 0x31
+	{ XOR,     RM_REG,    MASK_D,                0, 2 }, // 0x32
+	{ XOR,     RM_REG,    MASK_D|MASK_W,         0, 2 }, // 0x33
+	{ XOR,     ACC_IMM,   0,                     0, 2 }, // 0x34
+	{ XOR,     ACC_IMM,   MASK_W,                0, 3 }, // 0x35
+	{ SGMNT,   NONE,      MASK_SS,               0, 1 }, // 0x36
+	{ AAA,     NONE,      0,                     0, 1 }, // 0x37
+	{ CMP,     RM_REG,    0,                     0, 2 }, // 0x38
+	{ CMP,     RM_REG,    MASK_W,                0, 2 }, // 0x39
+	{ CMP,     RM_REG,    MASK_D,                0, 2 }, // 0x3A
+	{ CMP,     RM_REG,    MASK_D|MASK_W,         0, 2 }, // 0x3B
+	{ CMP,     ACC_IMM,   0,                     0, 2 }, // 0x3C
+	{ CMP,     ACC_IMM,   MASK_W,                0, 3 }, // 0x3D
+	{ SGMNT,   NONE,      MASK_DS,               0, 1 }, // 0x3E
+	{ AAS,     NONE,      0,                     0, 1 }, // 0x3F
+	{ INC,     REG,       MASK_W,                0, 1 }, // 0x40
+	{ INC,     REG,       MASK_W,                0, 1 }, // 0x41
+	{ INC,     REG,       MASK_W,                0, 1 }, // 0x42
+	{ INC,     REG,       MASK_W,                0, 1 }, // 0x43
+	{ INC,     REG,       MASK_W,                0, 1 }, // 0x44
+	{ INC,     REG,       MASK_W,                0, 1 }, // 0x45
+	{ INC,     REG,       MASK_W,                0, 1 }, // 0x46
+	{ INC,     REG,       MASK_W,                0, 1 }, // 0x47
+	{ DEC,     REG,       MASK_W,                0, 1 }, // 0x48
+	{ DEC,     REG,       MASK_W,                0, 1 }, // 0x49
+	{ DEC,     REG,       MASK_W,                0, 1 }, // 0x4A
+	{ DEC,     REG,       MASK_W,                0, 1 }, // 0x4B
+	{ DEC,     REG,       MASK_W,                0, 1 }, // 0x4C
+	{ DEC,     REG,       MASK_W,                0, 1 }, // 0x4D
+	{ DEC,     REG,       MASK_W,                0, 1 }, // 0x4E
+	{ DEC,     REG,       MASK_W,                0, 1 }, // 0x4F
+	{ PUSH,    REG,       MASK_W,                0, 1 }, // 0x50
+	{ PUSH,    REG,       MASK_W,                0, 1 }, // 0x51
+	{ PUSH,    REG,       MASK_W,                0, 1 }, // 0x52
+	{ PUSH,    REG,       MASK_W,                0, 1 }, // 0x53
+	{ PUSH,    REG,       MASK_W,                0, 1 }, // 0x54
+	{ PUSH,    REG,       MASK_W,                0, 1 }, // 0x55
+	{ PUSH,    REG,       MASK_W,                0, 1 }, // 0x56
+	{ PUSH,    REG,       MASK_W,                0, 1 }, // 0x57
+	{ POP,     REG,       MASK_W,                0, 1 }, // 0x58
+	{ POP,     REG,       MASK_W,                0, 1 }, // 0x59
+	{ POP,     REG,       MASK_W,                0, 1 }, // 0x5A
+	{ POP,     REG,       MASK_W,                0, 1 }, // 0x5B
+	{ POP,     REG,       MASK_W,                0, 1 }, // 0x5C
+	{ POP,     REG,       MASK_W,                0, 1 }, // 0x5D
+	{ POP,     REG,       MASK_W,                0, 1 }, // 0x5E
+	{ POP,     REG,       MASK_W,                0, 1 }, // 0x5F
+	{ UNKNOWN, NONE,      0,                     0, 1 }, // 0x60
+	{ UNKNOWN, NONE,      0,                     0, 1 }, // 0x61
+	{ UNKNOWN, NONE,      0,                     0, 1 }, // 0x62
+	{ UNKNOWN, NONE,      0,                     0, 1 }, // 0x63
+	{ UNKNOWN, NONE,      0,                     0, 1 }, // 0x64
+	{ UNKNOWN, NONE,      0,                     0, 1 }, // 0x65
+	{ UNKNOWN, NONE,      0,                     0, 1 }, // 0x66
+	{ UNKNOWN, NONE,      0,                     0, 1 }, // 0x67
+	{ UNKNOWN, NONE,      0,                     0, 1 }, // 0x68
+	{ UNKNOWN, NONE,      0,                     0, 1 }, // 0x69
+	{ UNKNOWN, NONE,      0,                     0, 1 }, // 0x6A
+	{ UNKNOWN, NONE,      0,                     0, 1 }, // 0x6B
+	{ UNKNOWN, NONE,      0,                     0, 1 }, // 0x6C
+	{ UNKNOWN, NONE,      0,                     0, 1 }, // 0x6D
+	{ UNKNOWN, NONE,      0,                     0, 1 }, // 0x6E
+	{ UNKNOWN, NONE,      0,                     0, 1 }, // 0x6F
+	{ JO,      JMP_SHORT, 0,                     0, 2 }, // 0x70
+	{ JNO,     JMP_SHORT, 0,                     0, 2 }, // 0x71
+	{ JB,      JMP_SHORT, 0,                     0, 2 }, // 0x72
+	{ JAE,     JMP_SHORT, 0,                     0, 2 }, // 0x73
+	{ JE,      JMP_SHORT, 0,                     0, 2 }, // 0x74
+	{ JNE,     JMP_SHORT, 0,                     0, 2 }, // 0x75
+	{ JBE,     JMP_SHORT, 0,                     0, 2 }, // 0x76
+	{ JA,      JMP_SHORT, 0,                     0, 2 }, // 0x77
+	{ JS,      JMP_SHORT, 0,                     0, 2 }, // 0x78
+	{ JNS,     JMP_SHORT, 0,                     0, 2 }, // 0x79
+	{ JP,      JMP_SHORT, 0,                     0, 2 }, // 0x7A
+	{ JPO,     JMP_SHORT, 0,                     0, 2 }, // 0x7B
+	{ JL,      JMP_SHORT, 0,                     0, 2 }, // 0x7C
+	{ JGE,     JMP_SHORT, 0,                     0, 2 }, // 0x7D
+	{ JLE,     JMP_SHORT, 0,                     0, 2 }, // 0x7E
+	{ JG,      JMP_SHORT, 0,                     0, 2 }, // 0x7F
+	{ EXTD,    NONE,      0,                     0, 0 }, // 0x80
+	{ EXTD,    NONE,      0,                     0, 0 }, // 0x81
+	{ EXTD,    NONE,      0,                     0, 0 }, // 0x82
+	{ EXTD,    NONE,      0,                     0, 0 }, // 0x83
+	{ TEST,    RM_REG,    0,                     0, 2 }, // 0x84
+	{ TEST,    RM_REG,    MASK_W,                0, 2 }, // 0x85
+	{ XCHG,    RM_REG,    MASK_D,                0, 2 }, // 0x86
+	{ XCHG,    RM_REG,    MASK_D|MASK_W,         0, 2 }, // 0x87
+	{ MOV,     RM_REG,    0,                     0, 2 }, // 0x88
+	{ MOV,     RM_REG,    MASK_W,                0, 2 }, // 0x89
+	{ MOV,     RM_REG,    MASK_D,                0, 2 }, // 0x8A
+	{ MOV,     RM_REG,    MASK_D|MASK_W,         0, 2 }, // 0x8B
+	{ EXTD,    NONE,      0,                     0, 0 }, // 0x8C
+	{ LEA,     RM_REG,    MASK_D|MASK_W|MASK_MO, 0, 2 }, // 0x8D
+	{ EXTD,    NONE,      0,                     0, 0 }, // 0x8E
+	{ EXTD,    NONE,      0,                     0, 0 }, // 0x8F
+	{ NOP,     NONE,      MASK_W,                0, 1 }, // 0x90
+	{ XCHG,    ACC_REG,   MASK_W,                0, 1 }, // 0x91
+	{ XCHG,    ACC_REG,   MASK_W,                0, 1 }, // 0x92
+	{ XCHG,    ACC_REG,   MASK_W,                0, 1 }, // 0x93
+	{ XCHG,    ACC_REG,   MASK_W,                0, 1 }, // 0x94
+	{ XCHG,    ACC_REG,   MASK_W,                0, 1 }, // 0x95
+	{ XCHG,    ACC_REG,   MASK_W,                0, 1 }, // 0x96
+	{ XCHG,    ACC_REG,   MASK_W,                0, 1 }, // 0x97
+	{ CBW,     NONE,      0,                     0, 1 }, // 0x98
+	{ CWD,     NONE,      0,                     0, 1 }, // 0x99
+	{ CALL,    JMP_FAR,   0,                     0, 5 }, // 0x9A
+	{ WAIT,    NONE,      0,                     0, 1 }, // 0x9B
+	{ PUSHF,   NONE,      0,                     0, 1 }, // 0x9C
+	{ POPF,    NONE,      0,                     0, 1 }, // 0x9D
+	{ SAHF,    NONE,      0,                     0, 1 }, // 0x9E
+	{ LAHF,    NONE,      0,                     0, 1 }, // 0x9F
+	{ MOV,     ACC_MEM,   MASK_MO,               0, 3 }, // 0xA0
+	{ MOV,     ACC_MEM,   MASK_W|MASK_MO,        0, 3 }, // 0xA1
+	{ MOV,     ACC_MEM,   MASK_D|MASK_MO,        0, 3 }, // 0xA2
+	{ MOV,     ACC_MEM,   MASK_D|MASK_W|MASK_MO, 0, 3 }, // 0xA3
+	{ MOVSB,   NONE,      0,                     0, 1 }, // 0xA4
+	{ MOVSW,   NONE,      MASK_W,                0, 1 }, // 0xA5
+	{ CMPSB,   NONE,      0,                     0, 1 }, // 0xA6
+	{ CMPSW,   NONE,      MASK_W,                0, 1 }, // 0xA7
+	{ TEST,    ACC_IMM,   0,                     0, 2 }, // 0xA8
+	{ TEST,    ACC_IMM,   MASK_W,                0, 3 }, // 0xA9
+	{ STOSB,   NONE,      0,                     0, 1 }, // 0xAA
+	{ STOSW,   NONE,      0,                     0, 1 }, // 0xAB
+	{ LODSB,   NONE,      0,                     0, 1 }, // 0xAC
+	{ LODSW,   NONE,      0,                     0, 1 }, // 0xAD
+	{ SCASB,   NONE,      0,                     0, 1 }, // 0xAE
+	{ SCASW,   NONE,      0,                     0, 1 }, // 0xAF
+	{ MOV,     REG_IMM,   0,                     0, 2 }, // 0xB0
+	{ MOV,     REG_IMM,   0,                     0, 2 }, // 0xB1
+	{ MOV,     REG_IMM,   0,                     0, 2 }, // 0xB2
+	{ MOV,     REG_IMM,   0,                     0, 2 }, // 0xB3
+	{ MOV,     REG_IMM,   0,                     0, 2 }, // 0xB4
+	{ MOV,     REG_IMM,   0,                     0, 2 }, // 0xB5
+	{ MOV,     REG_IMM,   0,                     0, 2 }, // 0xB6
+	{ MOV,     REG_IMM,   0,                     0, 2 }, // 0xB7
+	{ MOV,     REG_IMM,   MASK_W,                0, 3 }, // 0xB8
+	{ MOV,     REG_IMM,   MASK_W,                0, 3 }, // 0xB9
+	{ MOV,     REG_IMM,   MASK_W,                0, 3 }, // 0xBA
+	{ MOV,     REG_IMM,   MASK_W,                0, 3 }, // 0xBB
+	{ MOV,     REG_IMM,   MASK_W,                0, 3 }, // 0xBC
+	{ MOV,     REG_IMM,   MASK_W,                0, 3 }, // 0xBD
+	{ MOV,     REG_IMM,   MASK_W,                0, 3 }, // 0xBE
+	{ MOV,     REG_IMM,   MASK_W,                0, 3 }, // 0xBF
+	{ UNKNOWN, NONE,      0,                     0, 1 }, // 0xC0
+	{ UNKNOWN, NONE,      0,                     0, 1 }, // 0xC1
+	{ RET,     IMM,       MASK_W,                0, 3 }, // 0xC2
+	{ RET,     NONE,      0,                     0, 1 }, // 0xC3
+	{ LES,     RM_REG,    MASK_D|MASK_W|MASK_MO, 0, 2 }, // 0xC4
+	{ LDS,     RM_REG,    MASK_D|MASK_W|MASK_MO, 0, 2 }, // 0xC5
+	{ EXTD,    NONE,      0,                     0, 0 }, // 0xC6
+	{ EXTD,    NONE,      0,                     0, 0 }, // 0xC7
+	{ UNKNOWN, NONE,      0,                     0, 1 }, // 0xC8
+	{ UNKNOWN, NONE,      0,                     0, 1 }, // 0xC9
+	{ RETF,    IMM,       MASK_W,                0, 3 }, // 0xCA
+	{ RETF,    NONE,      0,                     0, 1 }, // 0xCB
+	{ INT3,    NONE,      0,                     0, 1 }, // 0xCC
+	{ INT,     IMM,       0,                     0, 2 }, // 0xCD
+	{ INTO,    NONE,      0,                     0, 1 }, // 0xCE
+	{ IRET,    NONE,      0,                     0, 1 }, // 0xCF
+	{ EXTD,    NONE,      0,                     0, 0 }, // 0xD0
+	{ EXTD,    NONE,      0,                     0, 0 }, // 0xD1
+	{ EXTD,    NONE,      0,                     0, 0 }, // 0xD2
+	{ EXTD,    NONE,      0,                     0, 0 }, // 0xD3
+	{ AAM,     NONE,      0,                     0, 2 }, // 0xD4
+	{ AAD,     NONE,      0,                     0, 2 }, // 0xD5
+	{ UNKNOWN, NONE,      0,                     0, 1 }, // 0xD6
+	{ XLAT,    NONE,      0,                     0, 1 }, // 0xD7
+	{ ESC,     RM_ESC,    MASK_W,                0, 2 }, // 0xD8
+	{ ESC,     RM_ESC,    MASK_W,                0, 2 }, // 0xD9
+	{ ESC,     RM_ESC,    MASK_W,                0, 2 }, // 0xDA
+	{ ESC,     RM_ESC,    MASK_W,                0, 2 }, // 0xDB
+	{ ESC,     RM_ESC,    MASK_W,                0, 2 }, // 0xDC
+	{ ESC,     RM_ESC,    MASK_W,                0, 2 }, // 0xDD
+	{ ESC,     RM_ESC,    MASK_W,                0, 2 }, // 0xDE
+	{ ESC,     RM_ESC,    MASK_W,                0, 2 }, // 0xDF
+	{ LOOPNZ,  JMP_SHORT, 0,                     0, 2 }, // 0xE0
+	{ LOOPZ,   JMP_SHORT, 0,                     0, 2 }, // 0xE1
+	{ LOOP,    JMP_SHORT, 0,                     0, 2 }, // 0xE2
+	{ JCXZ,    JMP_SHORT, 0,                     0, 2 }, // 0xE3
+	{ IN,      ACC_IMM8,  0,                     0, 2 }, // 0xE4
+	{ IN,      ACC_IMM8,  MASK_W,                0, 2 }, // 0xE5
+	{ OUT,     ACC_IMM8,  MASK_D,                0, 2 }, // 0xE6
+	{ OUT,     ACC_IMM8,  MASK_D|MASK_W,         0, 2 }, // 0xE7
+	{ CALL,    JMP_NEAR,  0,                     0, 3 }, // 0xE8
+	{ JMP,     JMP_NEAR,  0,                     0, 3 }, // 0xE9
+	{ JMP,     JMP_FAR,   0,                     0, 5 }, // 0xEA
+	{ JMP,     JMP_SHORT, 0,                     0, 2 }, // 0xEB
+	{ IN,      ACC_DX,    0,                     0, 1 }, // 0xEC
+	{ IN,      ACC_DX,    MASK_W,                0, 1 }, // 0xED
+	{ OUT,     ACC_DX,    MASK_D,                0, 1 }, // 0xEE
+	{ OUT,     ACC_DX,    MASK_D|MASK_W,         0, 1 }, // 0xEF
+	{ LOCK,    NONE,      0,                     0, 1 }, // 0xF0
+	{ UNKNOWN, NONE,      0,                     0, 1 }, // 0xF1
+	{ REPNE,   NONE,      0,                     0, 1 }, // 0xF2
+	{ REP,     NONE,      0,                     0, 1 }, // 0xF3
+	{ HLT,     NONE,      0,                     0, 1 }, // 0xF4
+	{ CMC,     NONE,      0,                     0, 1 }, // 0xF5
+	{ EXTD,    NONE,      0,                     0, 0 }, // 0xF6
+	{ EXTD,    NONE,      0,                     0, 0 }, // 0xF7
+	{ CLC,     NONE,      0,                     0, 1 }, // 0xF8
+	{ STC,     NONE,      0,                     0, 1 }, // 0xF9
+	{ CLI,     NONE,      0,                     0, 1 }, // 0xFA
+	{ STI,     NONE,      0,                     0, 1 }, // 0xFB
+	{ CLD,     NONE,      0,                     0, 1 }, // 0xFC
+	{ STD,     NONE,      0,                     0, 1 }, // 0xFD
+	{ EXTD,    NONE,      0,                     0, 0 }, // 0xFE
+	{ EXTD,    NONE,      0,                     0, 0 }, // 0xFF
 };
 
 InstructionData instruction_table_extd[17][8] = {
@@ -725,6 +725,28 @@ const char *get_instruction_name(TYPE type) {
     return "<unknown>";
 };
 
+int get_jmp_offset(Instruction *instruction)
+{
+    int    label_addr = 0;
+    uint8  tmp8;
+    uint16 tmp16;
+
+    switch (instruction->structure.format) {
+    case JMP_SHORT:
+        tmp8 = instruction->data & 0xFF;
+        label_addr = instruction->offset + 2 + *((int8 *)&tmp8);
+        break;
+    case  JMP_NEAR:
+        tmp16 = instruction->data;
+        label_addr = instruction->offset + 3 + *((int16 *)&tmp16);
+        break;
+    default:
+        return -1;
+    }
+
+    return label_addr;
+}
+
 
 int parse_instruction(Instruction *instruction,  uint8 * const data, uint size, uint offset) {
     InstructionData instruction_data;
@@ -738,7 +760,7 @@ int parse_instruction(Instruction *instruction,  uint8 * const data, uint size, 
 
     instruction_data = instruction_table[raw[0]];
 
-    //fprintf(stdout, "%d\n", raw[0]);
+    //fprintf(stdout, "%d :: ", raw[0]);
     if (instruction_data.type == EXTD) {
         switch (raw[0]) {
         case 0x80: i = 0x00; break;
@@ -768,10 +790,14 @@ int parse_instruction(Instruction *instruction,  uint8 * const data, uint size, 
         fprintf(stderr, "Out of bounds parsing instruction");
         return -1;
     }
-    // TODO HERE..
-    // set fields for [mod ... r/m]
+
     switch (instruction_data.format) {
-        case RM_REG:
+        case RM:
+	case RM_V:
+	case RM_SR:
+	case RM_REG:
+	case RM_IMM:
+	case RM_ESC:
             mod = MOD(raw[1]);
             rm  = RM(raw[1]);
 
@@ -785,15 +811,27 @@ int parse_instruction(Instruction *instruction,  uint8 * const data, uint size, 
 
             instruction_data.size += disp_size;
             instruction->displacement = (raw[3] << 8) * (disp_size > 1) | raw[2];
-            instruction->fields |= (mod & MASK_MOD) << 0;
-            instruction->fields |= (rm  & MASK_RM)  << 4;
+            instruction->fields |= (mod & 0b11)   << 0;
+            instruction->fields |= (rm  & 0b111)  << 4;
             break;
-        default:
-            break;
+        default: break;
     };
+
+    // save sr field
+    switch (instruction_data.format) {
+        case SR:
+            instruction->fields |= (SR(raw[0]) & 0b111) << 2;
+            break;
+        case RM_SR:
+            instruction->fields |= (SR(raw[1]) & 0b111) << 2;
+            break;
+        default: break;
+    }
 
     // set fields for reg
     switch (instruction_data.format) {
+        case REG:
+        case ACC_REG:
         case REG_IMM:
             instruction->fields |= (REG2(raw[0]) & MASK_REG) << 7;
             break;
@@ -807,7 +845,10 @@ int parse_instruction(Instruction *instruction,  uint8 * const data, uint size, 
 
     // for data/addr fields
     switch (instruction_data.format) {
+        case IMM:
+        case ACC_IMM:
         case REG_IMM:
+        case RM_IMM:
             if (instruction_data.flags & MASK_S) {
                 instruction->data = raw[instruction_data.size - data_size];
                 if (instruction->data & 0x80)
@@ -823,6 +864,18 @@ int parse_instruction(Instruction *instruction,  uint8 * const data, uint size, 
             lo = raw[instruction_data.size - data_size];
             instruction->data = (hi << 8) | lo;
             break;
+        case ACC_IMM8:
+	case JMP_SHORT:
+		instruction->data = raw[1];
+		break;
+	case ACC_MEM:
+	case JMP_NEAR:
+		instruction->data = (raw[2] << 8) | raw[1];
+		break;
+	case JMP_FAR:
+		instruction->data     = (raw[2] << 8) | raw[1];
+		instruction->data_ext = (raw[4] << 8) | raw[3];
+		break;
         default:
             break;
     }
@@ -842,6 +895,7 @@ int parse_instruction(Instruction *instruction,  uint8 * const data, uint size, 
 int scan_instructions(Instruction *const instructions, uint count, uint8 *const data, uint size) {
     uint i;
     uint offset = 0;
+    uint8 prefixes = 0;
     Instruction instruction;
 
     // we want to scan and return a count
@@ -866,6 +920,27 @@ int scan_instructions(Instruction *const instructions, uint count, uint8 *const 
         if (parse_instruction(instructions + i, data, size, offset) < 0) {
             return -1;
         }
+
+        switch (instructions[i].structure.type) {
+        case LOCK:
+            prefixes |= PFX_LOCK;
+            break;
+        case SGMNT:
+            prefixes |= instructions[i].structure.flags;
+            prefixes |= PFX_SGMNT;
+            break;
+        case REP:
+            prefixes |= PFX_REP;
+            break;
+        case REPNE:
+            prefixes |= PFX_REPNE;
+            break;
+        // if it isn't a prefix instruction, assign accumulated prefixes
+        default:
+            instructions[i].structure.prefixes |= prefixes;
+            prefixes = 0;
+        }
+
         offset += instructions[i].structure.size;
     }
     return 0;
@@ -873,20 +948,18 @@ int scan_instructions(Instruction *const instructions, uint count, uint8 *const 
 
 typedef void (*decode_fn)(FILE *, Instruction *);
 
-static void decode_rm   (FILE *out, Instruction *inst);
-static void decode_reg  (FILE *out, Instruction *inst);
-static void decode_imm  (FILE *out, Instruction *inst);
-/*
-static void decode_sr   (FILE *out, Instruction *inst);
-static void decode_v    (FILE *out, Instruction *inst);
-static void decode_acc  (FILE *out, Instruction *inst);
-static void decode_dx   (FILE *out, Instruction *inst);
-static void decode_imm8 (FILE *out, Instruction *inst);
-static void decode_mem  (FILE *out, Instruction *inst);
-static void decode_addr (FILE *out, Instruction *inst);
-static void decode_naddr(FILE *out, Instruction *inst);
-static void decode_faddr(FILE *out, Instruction *inst);
-*/
+static void decode_rm   (FILE *out, Instruction *instruction);
+static void decode_reg  (FILE *out, Instruction *instruction);
+static void decode_imm  (FILE *out, Instruction *instruction);
+static void decode_sr   (FILE *out, Instruction *instruction);
+static void decode_v    (FILE *out, Instruction *instruction);
+static void decode_acc  (FILE *out, Instruction *instruction);
+static void decode_dx   (FILE *out, Instruction *instruction);
+static void decode_imm8 (FILE *out, Instruction *instruction);
+static void decode_mem  (FILE *out, Instruction *instruction);
+static void decode_addr (FILE *out, Instruction *instruction);
+static void decode_naddr(FILE *out, Instruction *instruction);
+static void decode_faddr(FILE *out, Instruction *instruction);
 
 void decode_rm(FILE *out, Instruction *instruction)
 {
@@ -898,17 +971,7 @@ void decode_rm(FILE *out, Instruction *instruction)
 
     int16 disp = *((int16 *)&instruction->displacement);
 
-    static char *ea_base[8] =
-    {
-            "bx + si",
-            "bx + di",
-            "bp + si",
-            "bp + di",
-            "si",
-            "di",
-            "bp",
-            "bx",
-    };
+    static char *ea_base[8] = { "bx + si", "bx + di", "bp + si", "bp + di", "si", "di", "bp", "bx" };
 
     w   = W(instruction->structure.flags);
     mod = FIELD_MOD(instruction->fields);
@@ -945,14 +1008,14 @@ void decode_rm(FILE *out, Instruction *instruction)
         }
 
         op = ea_str;
-        /*
+
         if (instruction->structure.prefixes & PFX_WIDE) {
-                fprintf(out, "%s ", w ? "word" : "byte");
+            fprintf(out, "%s ", w ? "word" : "byte");
         }
 
         if (instruction->structure.prefixes & PFX_SGMNT) {
-                fprintf(out, "%s:", segregs[SGMNT_OP(instruction->structure.prefixes)]);
-        }*/
+            fprintf(out, "%s: ", segregs[SGMNT_OP(instruction->structure.prefixes)]);
+        }
     }
 
     fprintf(out, "%s", op);
@@ -968,10 +1031,62 @@ void decode_reg(FILE *out, Instruction *instruction)
     fprintf(out, "%s", regs[w][reg]);
 }
 
+void decode_sr(FILE *out, Instruction *instruction)
+{
+	fprintf(out, "%s", segregs[SR_OP(instruction->structure.flags)]);
+}
+
+void decode_v(FILE *out, Instruction *instruction)
+{
+	fprintf(out, "%s", (instruction->structure.flags & MASK_V) ? "cl" : "1");
+}
+
 void decode_imm(FILE *out, Instruction *instruction)
 {
-    int16 imm = *((int16 *)&instruction->data);
-    fprintf(out, "%d", imm);
+	int16 imm = *((int16 *)&instruction->data);
+	fprintf(out, "%d", imm);
+}
+
+void decode_acc(FILE *out, Instruction *instruction)
+{
+	fprintf(out, "%s", regs[W(instruction->structure.flags)][0]);
+}
+
+void decode_dx(FILE *out, Instruction *instruction)
+{
+	(void)instruction;
+	fprintf(out, "dx");
+}
+
+void decode_imm8(FILE *out, Instruction *instruction)
+{
+	fprintf(out, "%u", instruction->data & 0xFF);
+}
+
+void decode_mem(FILE *out, Instruction *instruction)
+{
+	fprintf(out, "[%u]", instruction->data & 0xFFFF);
+}
+
+void decode_addr(FILE *out, Instruction *instruction)
+{
+	int addr = get_jmp_offset(instruction);
+	assert(addr != -1);
+
+	fprintf(out, "label_%d", addr);
+}
+
+void decode_naddr(FILE *out, Instruction *instruction)
+{
+	int16_t addr = get_jmp_offset(instruction);
+	assert(addr != -1);
+
+	fprintf(out, "%d", addr);
+}
+
+void decode_faddr(FILE *out, Instruction *instruction)
+{
+	fprintf(out, "%u:%u", instruction->data_ext, instruction->data);
 }
 
 int decode_instruction(FILE *out, Instruction *instruction)
@@ -983,25 +1098,81 @@ int decode_instruction(FILE *out, Instruction *instruction)
         return -1;
     }
 
-    //if (instruction->structure.flags & MASK_LB) {
-    //    fprintf(out, "label_%u:\n", instruction->offset);
-    //}
+    if (instruction->structure.flags & MASK_LB) {
+        fprintf(out, "label_%u:\n", instruction->offset);
+    }
 
     fprintf(out, "%s", get_instruction_name(instruction->structure.type));
 
-    //if (instruction->structure.prefixes & PFX_FAR) fprintf(out, " far");
+    if (instruction->structure.prefixes & PFX_FAR) fprintf(out, " far");
 
     switch (instruction->structure.format) {
-        case RM_REG:
-            op1 = decode_rm;
-            op2 = decode_reg;
-            break;
-        case REG_IMM:
-            op1 = decode_reg;
-            op2 = decode_imm;
-            break;
-        default:
-            break;
+	case RM:
+		op1 = decode_rm;
+		break;
+	case RM_V:
+		op1 = decode_rm;
+		op2 = decode_v;
+		break;
+	case RM_SR:
+		op1 = decode_rm;
+		op2 = decode_sr;
+		break;
+	case RM_REG:
+		op1 = decode_rm;
+		op2 = decode_reg;
+		break;
+	case RM_IMM:
+		op1 = decode_rm;
+		op2 = decode_imm;
+		break;
+	case RM_ESC:
+		assert(0 && "not implemented");
+		break;
+	case ACC_DX:
+		op1 = decode_acc;
+		op2 = decode_dx;
+		break;
+	case ACC_IMM8:
+		op1 = decode_acc;
+		op2 = decode_imm8;
+		break;
+	case ACC_IMM:
+		op1 = decode_acc;
+		op2 = decode_imm;
+		break;
+	case ACC_REG:
+		op1 = decode_acc;
+		op2 = decode_reg;
+		break;
+	case ACC_MEM:
+		op1 = decode_acc;
+		op2 = decode_mem;
+		break;
+	case REG:
+		op1 = decode_reg;
+		break;
+	case REG_IMM:
+		op1 = decode_reg;
+		op2 = decode_imm;
+		break;
+	case SR:
+		op1 = decode_sr;
+		break;
+	case IMM:
+		op1 = decode_imm;
+		break;
+	case JMP_SHORT:
+		op1 = decode_addr;
+		break;
+	case JMP_NEAR:
+		op1 = decode_naddr;
+		break;
+	case JMP_FAR:
+		op1 = decode_faddr;
+		break;
+	case NONE:
+		break;
     }
 
     if (instruction->structure.flags & MASK_D) {
@@ -1059,6 +1230,15 @@ int main(int argc, char **argv) {
     fprintf(stdout, "bits 16\n\n");
     for (i=0, offset=0; i < instruction_count && offset < size; ++i, offset += instructions[i].structure.size) {
         decode_instruction(stdout, instructions + i);
+        switch (instructions[i].structure.type) {
+            case SGMNT: continue;
+            case LOCK:
+            case REP:
+            case REPNE:
+                fputc(' ', stdout);
+                continue;
+            default: break;
+        }
         fputc('\n', stdout);
     }
 
