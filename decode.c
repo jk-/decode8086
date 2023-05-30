@@ -54,11 +54,11 @@ typedef int16_t      int16;
 #define EXTD(byte) (((byte) >> 3) & 0b111)
 
 #define SGMNT_OP(prefixes) (((prefixes) >> 4) & 0b11)
-#define FIELD_MOD(fields)  (((fields) >>  0) & 0b11)
-#define FIELD_SR(fields)   (((fields) >>  2) & 0b11)
-#define FIELD_RM(fields)   (((fields) >>  4) & 0b111)
-#define FIELD_REG(fields)  (((fields) >>  7) & 0b111)
-#define FIELD_ESC(fields)  (((fields) >> 10) & 0b111111)
+#define FIELD_MOD(fields)  (((fields) >>  0)  & 0b11)
+#define FIELD_SR(fields)   (((fields) >>  2)  & 0b11)
+#define FIELD_RM(fields)   (((fields) >>  4)  & 0b111)
+#define FIELD_REG(fields)  (((fields) >>  7)  & 0b111)
+#define FIELD_ESC(fields)  (((fields) >> 10)  & 0b111111)
 
 static char *segregs[4] = { "es", "cs", "ss", "ds" };
 static char *regs[2][8] = {
@@ -162,262 +162,262 @@ typedef struct {
 } Instruction;
 
 InstructionData instruction_table[256] = {
-	{ ADD,     RM_REG,    0,                     0, 2 }, // 0x00
-	{ ADD,     RM_REG,    MASK_W,                0, 2 }, // 0x01
-	{ ADD,     RM_REG,    MASK_D,                0, 2 }, // 0x02
-	{ ADD,     RM_REG,    MASK_D|MASK_W,         0, 2 }, // 0x03
-	{ ADD,     ACC_IMM,   0,                     0, 2 }, // 0x04
-	{ ADD,     ACC_IMM,   MASK_W,                0, 3 }, // 0x05
-	{ PUSH,    SR,        MASK_ES,               0, 1 }, // 0x06
-	{ POP,     SR,        MASK_ES,               0, 1 }, // 0x07
-	{ OR,      RM_REG,    0,                     0, 2 }, // 0x08
-	{ OR,      RM_REG,    MASK_W,                0, 2 }, // 0x09
-	{ OR,      RM_REG,    MASK_D,                0, 2 }, // 0x0A
-	{ OR,      RM_REG,    MASK_D|MASK_W,         0, 2 }, // 0x0B
-	{ OR,      ACC_IMM,   0,                     0, 2 }, // 0x0C
-	{ OR,      ACC_IMM,   MASK_W,                0, 3 }, // 0x0D
-	{ PUSH,    SR,        MASK_CS,               0, 1 }, // 0x0E
-	{ UNKNOWN, NONE,      0,                     0, 1 }, // 0x0F
-	{ ADC,     RM_REG,    0,                     0, 2 }, // 0x10
-	{ ADC,     RM_REG,    MASK_W,                0, 2 }, // 0x11
-	{ ADC,     RM_REG,    MASK_D,                0, 2 }, // 0x12
-	{ ADC,     RM_REG,    MASK_D|MASK_W,         0, 2 }, // 0x13
-	{ ADC,     ACC_IMM,   0,                     0, 2 }, // 0x14
-	{ ADC,     ACC_IMM,   MASK_W,                0, 3 }, // 0x15
-	{ PUSH,    SR,        MASK_SS,               0, 1 }, // 0x16
-	{ POP,     SR,        MASK_SS,               0, 1 }, // 0x17
-	{ SBB,     RM_REG,    0,                     0, 2 }, // 0x18
-	{ SBB,     RM_REG,    MASK_W,                0, 2 }, // 0x19
-	{ SBB,     RM_REG,    MASK_D,                0, 2 }, // 0x1A
-	{ SBB,     RM_REG,    MASK_D|MASK_W,         0, 2 }, // 0x1B
-	{ SBB,     ACC_IMM,   0,                     0, 2 }, // 0x1C
-	{ SBB,     ACC_IMM,   MASK_W,                0, 3 }, // 0x1D
-	{ PUSH,    SR,        MASK_DS,               0, 1 }, // 0x1E
-	{ POP,     SR,        MASK_DS,               0, 1 }, // 0x1F
-	{ AND,     RM_REG,    0,                     0, 2 }, // 0x20
-	{ AND,     RM_REG,    MASK_W,                0, 2 }, // 0x21
-	{ AND,     RM_REG,    MASK_D,                0, 2 }, // 0x22
-	{ AND,     RM_REG,    MASK_D|MASK_W,         0, 2 }, // 0x23
-	{ AND,     ACC_IMM,   0,                     0, 2 }, // 0x24
-	{ AND,     ACC_IMM,   MASK_W,                0, 3 }, // 0x25
-	{ SGMNT,   NONE,      MASK_ES,               0, 1 }, // 0x26
-	{ DAA,     NONE,      0,                     0, 1 }, // 0x27
-	{ SUB,     RM_REG,    0,                     0, 2 }, // 0x28
-	{ SUB,     RM_REG,    MASK_W,                0, 2 }, // 0x29
-	{ SUB,     RM_REG,    MASK_D,                0, 2 }, // 0x2A
-	{ SUB,     RM_REG,    MASK_D|MASK_W,         0, 2 }, // 0x2B
-	{ SUB,     ACC_IMM,   0,                     0, 2 }, // 0x2C
-	{ SUB,     ACC_IMM,   MASK_W,                0, 3 }, // 0x2D
-	{ SGMNT,   NONE,      MASK_CS,               0, 1 }, // 0x2E
-	{ DAS,     NONE,      0,                     0, 1 }, // 0x2F
-	{ XOR,     RM_REG,    0,                     0, 2 }, // 0x30
-	{ XOR,     RM_REG,    MASK_W,                0, 2 }, // 0x31
-	{ XOR,     RM_REG,    MASK_D,                0, 2 }, // 0x32
-	{ XOR,     RM_REG,    MASK_D|MASK_W,         0, 2 }, // 0x33
-	{ XOR,     ACC_IMM,   0,                     0, 2 }, // 0x34
-	{ XOR,     ACC_IMM,   MASK_W,                0, 3 }, // 0x35
-	{ SGMNT,   NONE,      MASK_SS,               0, 1 }, // 0x36
-	{ AAA,     NONE,      0,                     0, 1 }, // 0x37
-	{ CMP,     RM_REG,    0,                     0, 2 }, // 0x38
-	{ CMP,     RM_REG,    MASK_W,                0, 2 }, // 0x39
-	{ CMP,     RM_REG,    MASK_D,                0, 2 }, // 0x3A
-	{ CMP,     RM_REG,    MASK_D|MASK_W,         0, 2 }, // 0x3B
-	{ CMP,     ACC_IMM,   0,                     0, 2 }, // 0x3C
-	{ CMP,     ACC_IMM,   MASK_W,                0, 3 }, // 0x3D
-	{ SGMNT,   NONE,      MASK_DS,               0, 1 }, // 0x3E
-	{ AAS,     NONE,      0,                     0, 1 }, // 0x3F
-	{ INC,     REG,       MASK_W,                0, 1 }, // 0x40
-	{ INC,     REG,       MASK_W,                0, 1 }, // 0x41
-	{ INC,     REG,       MASK_W,                0, 1 }, // 0x42
-	{ INC,     REG,       MASK_W,                0, 1 }, // 0x43
-	{ INC,     REG,       MASK_W,                0, 1 }, // 0x44
-	{ INC,     REG,       MASK_W,                0, 1 }, // 0x45
-	{ INC,     REG,       MASK_W,                0, 1 }, // 0x46
-	{ INC,     REG,       MASK_W,                0, 1 }, // 0x47
-	{ DEC,     REG,       MASK_W,                0, 1 }, // 0x48
-	{ DEC,     REG,       MASK_W,                0, 1 }, // 0x49
-	{ DEC,     REG,       MASK_W,                0, 1 }, // 0x4A
-	{ DEC,     REG,       MASK_W,                0, 1 }, // 0x4B
-	{ DEC,     REG,       MASK_W,                0, 1 }, // 0x4C
-	{ DEC,     REG,       MASK_W,                0, 1 }, // 0x4D
-	{ DEC,     REG,       MASK_W,                0, 1 }, // 0x4E
-	{ DEC,     REG,       MASK_W,                0, 1 }, // 0x4F
-	{ PUSH,    REG,       MASK_W,                0, 1 }, // 0x50
-	{ PUSH,    REG,       MASK_W,                0, 1 }, // 0x51
-	{ PUSH,    REG,       MASK_W,                0, 1 }, // 0x52
-	{ PUSH,    REG,       MASK_W,                0, 1 }, // 0x53
-	{ PUSH,    REG,       MASK_W,                0, 1 }, // 0x54
-	{ PUSH,    REG,       MASK_W,                0, 1 }, // 0x55
-	{ PUSH,    REG,       MASK_W,                0, 1 }, // 0x56
-	{ PUSH,    REG,       MASK_W,                0, 1 }, // 0x57
-	{ POP,     REG,       MASK_W,                0, 1 }, // 0x58
-	{ POP,     REG,       MASK_W,                0, 1 }, // 0x59
-	{ POP,     REG,       MASK_W,                0, 1 }, // 0x5A
-	{ POP,     REG,       MASK_W,                0, 1 }, // 0x5B
-	{ POP,     REG,       MASK_W,                0, 1 }, // 0x5C
-	{ POP,     REG,       MASK_W,                0, 1 }, // 0x5D
-	{ POP,     REG,       MASK_W,                0, 1 }, // 0x5E
-	{ POP,     REG,       MASK_W,                0, 1 }, // 0x5F
-	{ UNKNOWN, NONE,      0,                     0, 1 }, // 0x60
-	{ UNKNOWN, NONE,      0,                     0, 1 }, // 0x61
-	{ UNKNOWN, NONE,      0,                     0, 1 }, // 0x62
-	{ UNKNOWN, NONE,      0,                     0, 1 }, // 0x63
-	{ UNKNOWN, NONE,      0,                     0, 1 }, // 0x64
-	{ UNKNOWN, NONE,      0,                     0, 1 }, // 0x65
-	{ UNKNOWN, NONE,      0,                     0, 1 }, // 0x66
-	{ UNKNOWN, NONE,      0,                     0, 1 }, // 0x67
-	{ UNKNOWN, NONE,      0,                     0, 1 }, // 0x68
-	{ UNKNOWN, NONE,      0,                     0, 1 }, // 0x69
-	{ UNKNOWN, NONE,      0,                     0, 1 }, // 0x6A
-	{ UNKNOWN, NONE,      0,                     0, 1 }, // 0x6B
-	{ UNKNOWN, NONE,      0,                     0, 1 }, // 0x6C
-	{ UNKNOWN, NONE,      0,                     0, 1 }, // 0x6D
-	{ UNKNOWN, NONE,      0,                     0, 1 }, // 0x6E
-	{ UNKNOWN, NONE,      0,                     0, 1 }, // 0x6F
-	{ JO,      JMP_SHORT, 0,                     0, 2 }, // 0x70
-	{ JNO,     JMP_SHORT, 0,                     0, 2 }, // 0x71
-	{ JB,      JMP_SHORT, 0,                     0, 2 }, // 0x72
-	{ JAE,     JMP_SHORT, 0,                     0, 2 }, // 0x73
-	{ JE,      JMP_SHORT, 0,                     0, 2 }, // 0x74
-	{ JNE,     JMP_SHORT, 0,                     0, 2 }, // 0x75
-	{ JBE,     JMP_SHORT, 0,                     0, 2 }, // 0x76
-	{ JA,      JMP_SHORT, 0,                     0, 2 }, // 0x77
-	{ JS,      JMP_SHORT, 0,                     0, 2 }, // 0x78
-	{ JNS,     JMP_SHORT, 0,                     0, 2 }, // 0x79
-	{ JP,      JMP_SHORT, 0,                     0, 2 }, // 0x7A
-	{ JPO,     JMP_SHORT, 0,                     0, 2 }, // 0x7B
-	{ JL,      JMP_SHORT, 0,                     0, 2 }, // 0x7C
-	{ JGE,     JMP_SHORT, 0,                     0, 2 }, // 0x7D
-	{ JLE,     JMP_SHORT, 0,                     0, 2 }, // 0x7E
-	{ JG,      JMP_SHORT, 0,                     0, 2 }, // 0x7F
-	{ EXTD,    NONE,      0,                     0, 0 }, // 0x80
-	{ EXTD,    NONE,      0,                     0, 0 }, // 0x81
-	{ EXTD,    NONE,      0,                     0, 0 }, // 0x82
-	{ EXTD,    NONE,      0,                     0, 0 }, // 0x83
-	{ TEST,    RM_REG,    0,                     0, 2 }, // 0x84
-	{ TEST,    RM_REG,    MASK_W,                0, 2 }, // 0x85
-	{ XCHG,    RM_REG,    MASK_D,                0, 2 }, // 0x86
-	{ XCHG,    RM_REG,    MASK_D|MASK_W,         0, 2 }, // 0x87
-	{ MOV,     RM_REG,    0,                     0, 2 }, // 0x88
-	{ MOV,     RM_REG,    MASK_W,                0, 2 }, // 0x89
-	{ MOV,     RM_REG,    MASK_D,                0, 2 }, // 0x8A
-	{ MOV,     RM_REG,    MASK_D|MASK_W,         0, 2 }, // 0x8B
-	{ EXTD,    NONE,      0,                     0, 0 }, // 0x8C
-	{ LEA,     RM_REG,    MASK_D|MASK_W|MASK_MO, 0, 2 }, // 0x8D
-	{ EXTD,    NONE,      0,                     0, 0 }, // 0x8E
-	{ EXTD,    NONE,      0,                     0, 0 }, // 0x8F
-	{ NOP,     NONE,      MASK_W,                0, 1 }, // 0x90
-	{ XCHG,    ACC_REG,   MASK_W,                0, 1 }, // 0x91
-	{ XCHG,    ACC_REG,   MASK_W,                0, 1 }, // 0x92
-	{ XCHG,    ACC_REG,   MASK_W,                0, 1 }, // 0x93
-	{ XCHG,    ACC_REG,   MASK_W,                0, 1 }, // 0x94
-	{ XCHG,    ACC_REG,   MASK_W,                0, 1 }, // 0x95
-	{ XCHG,    ACC_REG,   MASK_W,                0, 1 }, // 0x96
-	{ XCHG,    ACC_REG,   MASK_W,                0, 1 }, // 0x97
-	{ CBW,     NONE,      0,                     0, 1 }, // 0x98
-	{ CWD,     NONE,      0,                     0, 1 }, // 0x99
-	{ CALL,    JMP_FAR,   0,                     0, 5 }, // 0x9A
-	{ WAIT,    NONE,      0,                     0, 1 }, // 0x9B
-	{ PUSHF,   NONE,      0,                     0, 1 }, // 0x9C
-	{ POPF,    NONE,      0,                     0, 1 }, // 0x9D
-	{ SAHF,    NONE,      0,                     0, 1 }, // 0x9E
-	{ LAHF,    NONE,      0,                     0, 1 }, // 0x9F
-	{ MOV,     ACC_MEM,   MASK_MO,               0, 3 }, // 0xA0
-	{ MOV,     ACC_MEM,   MASK_W|MASK_MO,        0, 3 }, // 0xA1
-	{ MOV,     ACC_MEM,   MASK_D|MASK_MO,        0, 3 }, // 0xA2
-	{ MOV,     ACC_MEM,   MASK_D|MASK_W|MASK_MO, 0, 3 }, // 0xA3
-	{ MOVSB,   NONE,      0,                     0, 1 }, // 0xA4
-	{ MOVSW,   NONE,      MASK_W,                0, 1 }, // 0xA5
-	{ CMPSB,   NONE,      0,                     0, 1 }, // 0xA6
-	{ CMPSW,   NONE,      MASK_W,                0, 1 }, // 0xA7
-	{ TEST,    ACC_IMM,   0,                     0, 2 }, // 0xA8
-	{ TEST,    ACC_IMM,   MASK_W,                0, 3 }, // 0xA9
-	{ STOSB,   NONE,      0,                     0, 1 }, // 0xAA
-	{ STOSW,   NONE,      0,                     0, 1 }, // 0xAB
-	{ LODSB,   NONE,      0,                     0, 1 }, // 0xAC
-	{ LODSW,   NONE,      0,                     0, 1 }, // 0xAD
-	{ SCASB,   NONE,      0,                     0, 1 }, // 0xAE
-	{ SCASW,   NONE,      0,                     0, 1 }, // 0xAF
-	{ MOV,     REG_IMM,   0,                     0, 2 }, // 0xB0
-	{ MOV,     REG_IMM,   0,                     0, 2 }, // 0xB1
-	{ MOV,     REG_IMM,   0,                     0, 2 }, // 0xB2
-	{ MOV,     REG_IMM,   0,                     0, 2 }, // 0xB3
-	{ MOV,     REG_IMM,   0,                     0, 2 }, // 0xB4
-	{ MOV,     REG_IMM,   0,                     0, 2 }, // 0xB5
-	{ MOV,     REG_IMM,   0,                     0, 2 }, // 0xB6
-	{ MOV,     REG_IMM,   0,                     0, 2 }, // 0xB7
-	{ MOV,     REG_IMM,   MASK_W,                0, 3 }, // 0xB8
-	{ MOV,     REG_IMM,   MASK_W,                0, 3 }, // 0xB9
-	{ MOV,     REG_IMM,   MASK_W,                0, 3 }, // 0xBA
-	{ MOV,     REG_IMM,   MASK_W,                0, 3 }, // 0xBB
-	{ MOV,     REG_IMM,   MASK_W,                0, 3 }, // 0xBC
-	{ MOV,     REG_IMM,   MASK_W,                0, 3 }, // 0xBD
-	{ MOV,     REG_IMM,   MASK_W,                0, 3 }, // 0xBE
-	{ MOV,     REG_IMM,   MASK_W,                0, 3 }, // 0xBF
-	{ UNKNOWN, NONE,      0,                     0, 1 }, // 0xC0
-	{ UNKNOWN, NONE,      0,                     0, 1 }, // 0xC1
-	{ RET,     IMM,       MASK_W,                0, 3 }, // 0xC2
-	{ RET,     NONE,      0,                     0, 1 }, // 0xC3
-	{ LES,     RM_REG,    MASK_D|MASK_W|MASK_MO, 0, 2 }, // 0xC4
-	{ LDS,     RM_REG,    MASK_D|MASK_W|MASK_MO, 0, 2 }, // 0xC5
-	{ EXTD,    NONE,      0,                     0, 0 }, // 0xC6
-	{ EXTD,    NONE,      0,                     0, 0 }, // 0xC7
-	{ UNKNOWN, NONE,      0,                     0, 1 }, // 0xC8
-	{ UNKNOWN, NONE,      0,                     0, 1 }, // 0xC9
-	{ RETF,    IMM,       MASK_W,                0, 3 }, // 0xCA
-	{ RETF,    NONE,      0,                     0, 1 }, // 0xCB
-	{ INT3,    NONE,      0,                     0, 1 }, // 0xCC
-	{ INT,     IMM,       0,                     0, 2 }, // 0xCD
-	{ INTO,    NONE,      0,                     0, 1 }, // 0xCE
-	{ IRET,    NONE,      0,                     0, 1 }, // 0xCF
-	{ EXTD,    NONE,      0,                     0, 0 }, // 0xD0
-	{ EXTD,    NONE,      0,                     0, 0 }, // 0xD1
-	{ EXTD,    NONE,      0,                     0, 0 }, // 0xD2
-	{ EXTD,    NONE,      0,                     0, 0 }, // 0xD3
-	{ AAM,     NONE,      0,                     0, 2 }, // 0xD4
-	{ AAD,     NONE,      0,                     0, 2 }, // 0xD5
-	{ UNKNOWN, NONE,      0,                     0, 1 }, // 0xD6
-	{ XLAT,    NONE,      0,                     0, 1 }, // 0xD7
-	{ ESC,     RM_ESC,    MASK_W,                0, 2 }, // 0xD8
-	{ ESC,     RM_ESC,    MASK_W,                0, 2 }, // 0xD9
-	{ ESC,     RM_ESC,    MASK_W,                0, 2 }, // 0xDA
-	{ ESC,     RM_ESC,    MASK_W,                0, 2 }, // 0xDB
-	{ ESC,     RM_ESC,    MASK_W,                0, 2 }, // 0xDC
-	{ ESC,     RM_ESC,    MASK_W,                0, 2 }, // 0xDD
-	{ ESC,     RM_ESC,    MASK_W,                0, 2 }, // 0xDE
-	{ ESC,     RM_ESC,    MASK_W,                0, 2 }, // 0xDF
-	{ LOOPNZ,  JMP_SHORT, 0,                     0, 2 }, // 0xE0
-	{ LOOPZ,   JMP_SHORT, 0,                     0, 2 }, // 0xE1
-	{ LOOP,    JMP_SHORT, 0,                     0, 2 }, // 0xE2
-	{ JCXZ,    JMP_SHORT, 0,                     0, 2 }, // 0xE3
-	{ IN,      ACC_IMM8,  0,                     0, 2 }, // 0xE4
-	{ IN,      ACC_IMM8,  MASK_W,                0, 2 }, // 0xE5
-	{ OUT,     ACC_IMM8,  MASK_D,                0, 2 }, // 0xE6
-	{ OUT,     ACC_IMM8,  MASK_D|MASK_W,         0, 2 }, // 0xE7
-	{ CALL,    JMP_NEAR,  0,                     0, 3 }, // 0xE8
-	{ JMP,     JMP_NEAR,  0,                     0, 3 }, // 0xE9
-	{ JMP,     JMP_FAR,   0,                     0, 5 }, // 0xEA
-	{ JMP,     JMP_SHORT, 0,                     0, 2 }, // 0xEB
-	{ IN,      ACC_DX,    0,                     0, 1 }, // 0xEC
-	{ IN,      ACC_DX,    MASK_W,                0, 1 }, // 0xED
-	{ OUT,     ACC_DX,    MASK_D,                0, 1 }, // 0xEE
-	{ OUT,     ACC_DX,    MASK_D|MASK_W,         0, 1 }, // 0xEF
-	{ LOCK,    NONE,      0,                     0, 1 }, // 0xF0
-	{ UNKNOWN, NONE,      0,                     0, 1 }, // 0xF1
-	{ REPNE,   NONE,      0,                     0, 1 }, // 0xF2
-	{ REP,     NONE,      0,                     0, 1 }, // 0xF3
-	{ HLT,     NONE,      0,                     0, 1 }, // 0xF4
-	{ CMC,     NONE,      0,                     0, 1 }, // 0xF5
-	{ EXTD,    NONE,      0,                     0, 0 }, // 0xF6
-	{ EXTD,    NONE,      0,                     0, 0 }, // 0xF7
-	{ CLC,     NONE,      0,                     0, 1 }, // 0xF8
-	{ STC,     NONE,      0,                     0, 1 }, // 0xF9
-	{ CLI,     NONE,      0,                     0, 1 }, // 0xFA
-	{ STI,     NONE,      0,                     0, 1 }, // 0xFB
-	{ CLD,     NONE,      0,                     0, 1 }, // 0xFC
-	{ STD,     NONE,      0,                     0, 1 }, // 0xFD
-	{ EXTD,    NONE,      0,                     0, 0 }, // 0xFE
-	{ EXTD,    NONE,      0,                     0, 0 }, // 0xFF
+    { ADD,     RM_REG,    0,                     0, 2 }, // 0x00
+    { ADD,     RM_REG,    MASK_W,                0, 2 }, // 0x01
+    { ADD,     RM_REG,    MASK_D,                0, 2 }, // 0x02
+    { ADD,     RM_REG,    MASK_D|MASK_W,         0, 2 }, // 0x03
+    { ADD,     ACC_IMM,   0,                     0, 2 }, // 0x04
+    { ADD,     ACC_IMM,   MASK_W,                0, 3 }, // 0x05
+    { PUSH,    SR,        MASK_ES,               0, 1 }, // 0x06
+    { POP,     SR,        MASK_ES,               0, 1 }, // 0x07
+    { OR,      RM_REG,    0,                     0, 2 }, // 0x08
+    { OR,      RM_REG,    MASK_W,                0, 2 }, // 0x09
+    { OR,      RM_REG,    MASK_D,                0, 2 }, // 0x0A
+    { OR,      RM_REG,    MASK_D|MASK_W,         0, 2 }, // 0x0B
+    { OR,      ACC_IMM,   0,                     0, 2 }, // 0x0C
+    { OR,      ACC_IMM,   MASK_W,                0, 3 }, // 0x0D
+    { PUSH,    SR,        MASK_CS,               0, 1 }, // 0x0E
+    { UNKNOWN, NONE,      0,                     0, 1 }, // 0x0F
+    { ADC,     RM_REG,    0,                     0, 2 }, // 0x10
+    { ADC,     RM_REG,    MASK_W,                0, 2 }, // 0x11
+    { ADC,     RM_REG,    MASK_D,                0, 2 }, // 0x12
+    { ADC,     RM_REG,    MASK_D|MASK_W,         0, 2 }, // 0x13
+    { ADC,     ACC_IMM,   0,                     0, 2 }, // 0x14
+    { ADC,     ACC_IMM,   MASK_W,                0, 3 }, // 0x15
+    { PUSH,    SR,        MASK_SS,               0, 1 }, // 0x16
+    { POP,     SR,        MASK_SS,               0, 1 }, // 0x17
+    { SBB,     RM_REG,    0,                     0, 2 }, // 0x18
+    { SBB,     RM_REG,    MASK_W,                0, 2 }, // 0x19
+    { SBB,     RM_REG,    MASK_D,                0, 2 }, // 0x1A
+    { SBB,     RM_REG,    MASK_D|MASK_W,         0, 2 }, // 0x1B
+    { SBB,     ACC_IMM,   0,                     0, 2 }, // 0x1C
+    { SBB,     ACC_IMM,   MASK_W,                0, 3 }, // 0x1D
+    { PUSH,    SR,        MASK_DS,               0, 1 }, // 0x1E
+    { POP,     SR,        MASK_DS,               0, 1 }, // 0x1F
+    { AND,     RM_REG,    0,                     0, 2 }, // 0x20
+    { AND,     RM_REG,    MASK_W,                0, 2 }, // 0x21
+    { AND,     RM_REG,    MASK_D,                0, 2 }, // 0x22
+    { AND,     RM_REG,    MASK_D|MASK_W,         0, 2 }, // 0x23
+    { AND,     ACC_IMM,   0,                     0, 2 }, // 0x24
+    { AND,     ACC_IMM,   MASK_W,                0, 3 }, // 0x25
+    { SGMNT,   NONE,      MASK_ES,               0, 1 }, // 0x26
+    { DAA,     NONE,      0,                     0, 1 }, // 0x27
+    { SUB,     RM_REG,    0,                     0, 2 }, // 0x28
+    { SUB,     RM_REG,    MASK_W,                0, 2 }, // 0x29
+    { SUB,     RM_REG,    MASK_D,                0, 2 }, // 0x2A
+    { SUB,     RM_REG,    MASK_D|MASK_W,         0, 2 }, // 0x2B
+    { SUB,     ACC_IMM,   0,                     0, 2 }, // 0x2C
+    { SUB,     ACC_IMM,   MASK_W,                0, 3 }, // 0x2D
+    { SGMNT,   NONE,      MASK_CS,               0, 1 }, // 0x2E
+    { DAS,     NONE,      0,                     0, 1 }, // 0x2F
+    { XOR,     RM_REG,    0,                     0, 2 }, // 0x30
+    { XOR,     RM_REG,    MASK_W,                0, 2 }, // 0x31
+    { XOR,     RM_REG,    MASK_D,                0, 2 }, // 0x32
+    { XOR,     RM_REG,    MASK_D|MASK_W,         0, 2 }, // 0x33
+    { XOR,     ACC_IMM,   0,                     0, 2 }, // 0x34
+    { XOR,     ACC_IMM,   MASK_W,                0, 3 }, // 0x35
+    { SGMNT,   NONE,      MASK_SS,               0, 1 }, // 0x36
+    { AAA,     NONE,      0,                     0, 1 }, // 0x37
+    { CMP,     RM_REG,    0,                     0, 2 }, // 0x38
+    { CMP,     RM_REG,    MASK_W,                0, 2 }, // 0x39
+    { CMP,     RM_REG,    MASK_D,                0, 2 }, // 0x3A
+    { CMP,     RM_REG,    MASK_D|MASK_W,         0, 2 }, // 0x3B
+    { CMP,     ACC_IMM,   0,                     0, 2 }, // 0x3C
+    { CMP,     ACC_IMM,   MASK_W,                0, 3 }, // 0x3D
+    { SGMNT,   NONE,      MASK_DS,               0, 1 }, // 0x3E
+    { AAS,     NONE,      0,                     0, 1 }, // 0x3F
+    { INC,     REG,       MASK_W,                0, 1 }, // 0x40
+    { INC,     REG,       MASK_W,                0, 1 }, // 0x41
+    { INC,     REG,       MASK_W,                0, 1 }, // 0x42
+    { INC,     REG,       MASK_W,                0, 1 }, // 0x43
+    { INC,     REG,       MASK_W,                0, 1 }, // 0x44
+    { INC,     REG,       MASK_W,                0, 1 }, // 0x45
+    { INC,     REG,       MASK_W,                0, 1 }, // 0x46
+    { INC,     REG,       MASK_W,                0, 1 }, // 0x47
+    { DEC,     REG,       MASK_W,                0, 1 }, // 0x48
+    { DEC,     REG,       MASK_W,                0, 1 }, // 0x49
+    { DEC,     REG,       MASK_W,                0, 1 }, // 0x4A
+    { DEC,     REG,       MASK_W,                0, 1 }, // 0x4B
+    { DEC,     REG,       MASK_W,                0, 1 }, // 0x4C
+    { DEC,     REG,       MASK_W,                0, 1 }, // 0x4D
+    { DEC,     REG,       MASK_W,                0, 1 }, // 0x4E
+    { DEC,     REG,       MASK_W,                0, 1 }, // 0x4F
+    { PUSH,    REG,       MASK_W,                0, 1 }, // 0x50
+    { PUSH,    REG,       MASK_W,                0, 1 }, // 0x51
+    { PUSH,    REG,       MASK_W,                0, 1 }, // 0x52
+    { PUSH,    REG,       MASK_W,                0, 1 }, // 0x53
+    { PUSH,    REG,       MASK_W,                0, 1 }, // 0x54
+    { PUSH,    REG,       MASK_W,                0, 1 }, // 0x55
+    { PUSH,    REG,       MASK_W,                0, 1 }, // 0x56
+    { PUSH,    REG,       MASK_W,                0, 1 }, // 0x57
+    { POP,     REG,       MASK_W,                0, 1 }, // 0x58
+    { POP,     REG,       MASK_W,                0, 1 }, // 0x59
+    { POP,     REG,       MASK_W,                0, 1 }, // 0x5A
+    { POP,     REG,       MASK_W,                0, 1 }, // 0x5B
+    { POP,     REG,       MASK_W,                0, 1 }, // 0x5C
+    { POP,     REG,       MASK_W,                0, 1 }, // 0x5D
+    { POP,     REG,       MASK_W,                0, 1 }, // 0x5E
+    { POP,     REG,       MASK_W,                0, 1 }, // 0x5F
+    { UNKNOWN, NONE,      0,                     0, 1 }, // 0x60
+    { UNKNOWN, NONE,      0,                     0, 1 }, // 0x61
+    { UNKNOWN, NONE,      0,                     0, 1 }, // 0x62
+    { UNKNOWN, NONE,      0,                     0, 1 }, // 0x63
+    { UNKNOWN, NONE,      0,                     0, 1 }, // 0x64
+    { UNKNOWN, NONE,      0,                     0, 1 }, // 0x65
+    { UNKNOWN, NONE,      0,                     0, 1 }, // 0x66
+    { UNKNOWN, NONE,      0,                     0, 1 }, // 0x67
+    { UNKNOWN, NONE,      0,                     0, 1 }, // 0x68
+    { UNKNOWN, NONE,      0,                     0, 1 }, // 0x69
+    { UNKNOWN, NONE,      0,                     0, 1 }, // 0x6A
+    { UNKNOWN, NONE,      0,                     0, 1 }, // 0x6B
+    { UNKNOWN, NONE,      0,                     0, 1 }, // 0x6C
+    { UNKNOWN, NONE,      0,                     0, 1 }, // 0x6D
+    { UNKNOWN, NONE,      0,                     0, 1 }, // 0x6E
+    { UNKNOWN, NONE,      0,                     0, 1 }, // 0x6F
+    { JO,      JMP_SHORT, 0,                     0, 2 }, // 0x70
+    { JNO,     JMP_SHORT, 0,                     0, 2 }, // 0x71
+    { JB,      JMP_SHORT, 0,                     0, 2 }, // 0x72
+    { JAE,     JMP_SHORT, 0,                     0, 2 }, // 0x73
+    { JE,      JMP_SHORT, 0,                     0, 2 }, // 0x74
+    { JNE,     JMP_SHORT, 0,                     0, 2 }, // 0x75
+    { JBE,     JMP_SHORT, 0,                     0, 2 }, // 0x76
+    { JA,      JMP_SHORT, 0,                     0, 2 }, // 0x77
+    { JS,      JMP_SHORT, 0,                     0, 2 }, // 0x78
+    { JNS,     JMP_SHORT, 0,                     0, 2 }, // 0x79
+    { JP,      JMP_SHORT, 0,                     0, 2 }, // 0x7A
+    { JPO,     JMP_SHORT, 0,                     0, 2 }, // 0x7B
+    { JL,      JMP_SHORT, 0,                     0, 2 }, // 0x7C
+    { JGE,     JMP_SHORT, 0,                     0, 2 }, // 0x7D
+    { JLE,     JMP_SHORT, 0,                     0, 2 }, // 0x7E
+    { JG,      JMP_SHORT, 0,                     0, 2 }, // 0x7F
+    { EXTD,    NONE,      0,                     0, 0 }, // 0x80
+    { EXTD,    NONE,      0,                     0, 0 }, // 0x81
+    { EXTD,    NONE,      0,                     0, 0 }, // 0x82
+    { EXTD,    NONE,      0,                     0, 0 }, // 0x83
+    { TEST,    RM_REG,    0,                     0, 2 }, // 0x84
+    { TEST,    RM_REG,    MASK_W,                0, 2 }, // 0x85
+    { XCHG,    RM_REG,    MASK_D,                0, 2 }, // 0x86
+    { XCHG,    RM_REG,    MASK_D|MASK_W,         0, 2 }, // 0x87
+    { MOV,     RM_REG,    0,                     0, 2 }, // 0x88
+    { MOV,     RM_REG,    MASK_W,                0, 2 }, // 0x89
+    { MOV,     RM_REG,    MASK_D,                0, 2 }, // 0x8A
+    { MOV,     RM_REG,    MASK_D|MASK_W,         0, 2 }, // 0x8B
+    { EXTD,    NONE,      0,                     0, 0 }, // 0x8C
+    { LEA,     RM_REG,    MASK_D|MASK_W|MASK_MO, 0, 2 }, // 0x8D
+    { EXTD,    NONE,      0,                     0, 0 }, // 0x8E
+    { EXTD,    NONE,      0,                     0, 0 }, // 0x8F
+    { NOP,     NONE,      MASK_W,                0, 1 }, // 0x90
+    { XCHG,    ACC_REG,   MASK_W,                0, 1 }, // 0x91
+    { XCHG,    ACC_REG,   MASK_W,                0, 1 }, // 0x92
+    { XCHG,    ACC_REG,   MASK_W,                0, 1 }, // 0x93
+    { XCHG,    ACC_REG,   MASK_W,                0, 1 }, // 0x94
+    { XCHG,    ACC_REG,   MASK_W,                0, 1 }, // 0x95
+    { XCHG,    ACC_REG,   MASK_W,                0, 1 }, // 0x96
+    { XCHG,    ACC_REG,   MASK_W,                0, 1 }, // 0x97
+    { CBW,     NONE,      0,                     0, 1 }, // 0x98
+    { CWD,     NONE,      0,                     0, 1 }, // 0x99
+    { CALL,    JMP_FAR,   0,                     0, 5 }, // 0x9A
+    { WAIT,    NONE,      0,                     0, 1 }, // 0x9B
+    { PUSHF,   NONE,      0,                     0, 1 }, // 0x9C
+    { POPF,    NONE,      0,                     0, 1 }, // 0x9D
+    { SAHF,    NONE,      0,                     0, 1 }, // 0x9E
+    { LAHF,    NONE,      0,                     0, 1 }, // 0x9F
+    { MOV,     ACC_MEM,   MASK_MO,               0, 3 }, // 0xA0
+    { MOV,     ACC_MEM,   MASK_W|MASK_MO,        0, 3 }, // 0xA1
+    { MOV,     ACC_MEM,   MASK_D|MASK_MO,        0, 3 }, // 0xA2
+    { MOV,     ACC_MEM,   MASK_D|MASK_W|MASK_MO, 0, 3 }, // 0xA3
+    { MOVSB,   NONE,      0,                     0, 1 }, // 0xA4
+    { MOVSW,   NONE,      MASK_W,                0, 1 }, // 0xA5
+    { CMPSB,   NONE,      0,                     0, 1 }, // 0xA6
+    { CMPSW,   NONE,      MASK_W,                0, 1 }, // 0xA7
+    { TEST,    ACC_IMM,   0,                     0, 2 }, // 0xA8
+    { TEST,    ACC_IMM,   MASK_W,                0, 3 }, // 0xA9
+    { STOSB,   NONE,      0,                     0, 1 }, // 0xAA
+    { STOSW,   NONE,      0,                     0, 1 }, // 0xAB
+    { LODSB,   NONE,      0,                     0, 1 }, // 0xAC
+    { LODSW,   NONE,      0,                     0, 1 }, // 0xAD
+    { SCASB,   NONE,      0,                     0, 1 }, // 0xAE
+    { SCASW,   NONE,      0,                     0, 1 }, // 0xAF
+    { MOV,     REG_IMM,   0,                     0, 2 }, // 0xB0
+    { MOV,     REG_IMM,   0,                     0, 2 }, // 0xB1
+    { MOV,     REG_IMM,   0,                     0, 2 }, // 0xB2
+    { MOV,     REG_IMM,   0,                     0, 2 }, // 0xB3
+    { MOV,     REG_IMM,   0,                     0, 2 }, // 0xB4
+    { MOV,     REG_IMM,   0,                     0, 2 }, // 0xB5
+    { MOV,     REG_IMM,   0,                     0, 2 }, // 0xB6
+    { MOV,     REG_IMM,   0,                     0, 2 }, // 0xB7
+    { MOV,     REG_IMM,   MASK_W,                0, 3 }, // 0xB8
+    { MOV,     REG_IMM,   MASK_W,                0, 3 }, // 0xB9
+    { MOV,     REG_IMM,   MASK_W,                0, 3 }, // 0xBA
+    { MOV,     REG_IMM,   MASK_W,                0, 3 }, // 0xBB
+    { MOV,     REG_IMM,   MASK_W,                0, 3 }, // 0xBC
+    { MOV,     REG_IMM,   MASK_W,                0, 3 }, // 0xBD
+    { MOV,     REG_IMM,   MASK_W,                0, 3 }, // 0xBE
+    { MOV,     REG_IMM,   MASK_W,                0, 3 }, // 0xBF
+    { UNKNOWN, NONE,      0,                     0, 1 }, // 0xC0
+    { UNKNOWN, NONE,      0,                     0, 1 }, // 0xC1
+    { RET,     IMM,       MASK_W,                0, 3 }, // 0xC2
+    { RET,     NONE,      0,                     0, 1 }, // 0xC3
+    { LES,     RM_REG,    MASK_D|MASK_W|MASK_MO, 0, 2 }, // 0xC4
+    { LDS,     RM_REG,    MASK_D|MASK_W|MASK_MO, 0, 2 }, // 0xC5
+    { EXTD,    NONE,      0,                     0, 0 }, // 0xC6
+    { EXTD,    NONE,      0,                     0, 0 }, // 0xC7
+    { UNKNOWN, NONE,      0,                     0, 1 }, // 0xC8
+    { UNKNOWN, NONE,      0,                     0, 1 }, // 0xC9
+    { RETF,    IMM,       MASK_W,                0, 3 }, // 0xCA
+    { RETF,    NONE,      0,                     0, 1 }, // 0xCB
+    { INT3,    NONE,      0,                     0, 1 }, // 0xCC
+    { INT,     IMM,       0,                     0, 2 }, // 0xCD
+    { INTO,    NONE,      0,                     0, 1 }, // 0xCE
+    { IRET,    NONE,      0,                     0, 1 }, // 0xCF
+    { EXTD,    NONE,      0,                     0, 0 }, // 0xD0
+    { EXTD,    NONE,      0,                     0, 0 }, // 0xD1
+    { EXTD,    NONE,      0,                     0, 0 }, // 0xD2
+    { EXTD,    NONE,      0,                     0, 0 }, // 0xD3
+    { AAM,     NONE,      0,                     0, 2 }, // 0xD4
+    { AAD,     NONE,      0,                     0, 2 }, // 0xD5
+    { UNKNOWN, NONE,      0,                     0, 1 }, // 0xD6
+    { XLAT,    NONE,      0,                     0, 1 }, // 0xD7
+    { ESC,     RM_ESC,    MASK_W,                0, 2 }, // 0xD8
+    { ESC,     RM_ESC,    MASK_W,                0, 2 }, // 0xD9
+    { ESC,     RM_ESC,    MASK_W,                0, 2 }, // 0xDA
+    { ESC,     RM_ESC,    MASK_W,                0, 2 }, // 0xDB
+    { ESC,     RM_ESC,    MASK_W,                0, 2 }, // 0xDC
+    { ESC,     RM_ESC,    MASK_W,                0, 2 }, // 0xDD
+    { ESC,     RM_ESC,    MASK_W,                0, 2 }, // 0xDE
+    { ESC,     RM_ESC,    MASK_W,                0, 2 }, // 0xDF
+    { LOOPNZ,  JMP_SHORT, 0,                     0, 2 }, // 0xE0
+    { LOOPZ,   JMP_SHORT, 0,                     0, 2 }, // 0xE1
+    { LOOP,    JMP_SHORT, 0,                     0, 2 }, // 0xE2
+    { JCXZ,    JMP_SHORT, 0,                     0, 2 }, // 0xE3
+    { IN,      ACC_IMM8,  0,                     0, 2 }, // 0xE4
+    { IN,      ACC_IMM8,  MASK_W,                0, 2 }, // 0xE5
+    { OUT,     ACC_IMM8,  MASK_D,                0, 2 }, // 0xE6
+    { OUT,     ACC_IMM8,  MASK_D|MASK_W,         0, 2 }, // 0xE7
+    { CALL,    JMP_NEAR,  0,                     0, 3 }, // 0xE8
+    { JMP,     JMP_NEAR,  0,                     0, 3 }, // 0xE9
+    { JMP,     JMP_FAR,   0,                     0, 5 }, // 0xEA
+    { JMP,     JMP_SHORT, 0,                     0, 2 }, // 0xEB
+    { IN,      ACC_DX,    0,                     0, 1 }, // 0xEC
+    { IN,      ACC_DX,    MASK_W,                0, 1 }, // 0xED
+    { OUT,     ACC_DX,    MASK_D,                0, 1 }, // 0xEE
+    { OUT,     ACC_DX,    MASK_D|MASK_W,         0, 1 }, // 0xEF
+    { LOCK,    NONE,      0,                     0, 1 }, // 0xF0
+    { UNKNOWN, NONE,      0,                     0, 1 }, // 0xF1
+    { REPNE,   NONE,      0,                     0, 1 }, // 0xF2
+    { REP,     NONE,      0,                     0, 1 }, // 0xF3
+    { HLT,     NONE,      0,                     0, 1 }, // 0xF4
+    { CMC,     NONE,      0,                     0, 1 }, // 0xF5
+    { EXTD,    NONE,      0,                     0, 0 }, // 0xF6
+    { EXTD,    NONE,      0,                     0, 0 }, // 0xF7
+    { CLC,     NONE,      0,                     0, 1 }, // 0xF8
+    { STC,     NONE,      0,                     0, 1 }, // 0xF9
+    { CLI,     NONE,      0,                     0, 1 }, // 0xFA
+    { STI,     NONE,      0,                     0, 1 }, // 0xFB
+    { CLD,     NONE,      0,                     0, 1 }, // 0xFC
+    { STD,     NONE,      0,                     0, 1 }, // 0xFD
+    { EXTD,    NONE,      0,                     0, 0 }, // 0xFE
+    { EXTD,    NONE,      0,                     0, 0 }, // 0xFF
 };
 
 InstructionData instruction_table_extd[17][8] = {
@@ -489,7 +489,7 @@ InstructionData instruction_table_extd[17][8] = {
     },
     // [0x06]: 0x8F (0b1000 1111)
     {
-        { POP,  RM,     MASK_W,          PFX_WIDE, 2 },
+        { POP,      RM,     MASK_W,       PFX_WIDE, 2 },
         { UNKNOWN,  NONE,   0,            0,        1 },
         { UNKNOWN,  NONE,   0,            0,        1 },
         { UNKNOWN,  NONE,   0,            0,        1 },
@@ -500,7 +500,7 @@ InstructionData instruction_table_extd[17][8] = {
     },
     // [0x07]: 0xC6 (0b1100 0110)
     {
-        { MOV,  RM_IMM, MASK_MO,         PFX_WIDE, 3 },
+        { MOV,      RM_IMM, MASK_MO,      PFX_WIDE, 3 },
         { UNKNOWN,  NONE,   0,            0,        1 },
         { UNKNOWN,  NONE,   0,            0,        1 },
         { UNKNOWN,  NONE,   0,            0,        1 },
@@ -511,85 +511,85 @@ InstructionData instruction_table_extd[17][8] = {
     },
     // [0x08]: 0xC7 (0b1100 0111)
     {
-        { MOV,  RM_IMM, MASK_W|MASK_MO,     PFX_WIDE, 4 },
-        { UNKNOWN,  NONE,   0,            0,        1 },
-        { UNKNOWN,  NONE,   0,            0,        1 },
-        { UNKNOWN,  NONE,   0,            0,        1 },
-        { UNKNOWN,  NONE,   0,            0,        1 },
-        { UNKNOWN,  NONE,   0,            0,        1 },
-        { UNKNOWN,  NONE,   0,            0,        1 },
-        { UNKNOWN,  NONE,   0,            0,        1 },
+        { MOV,      RM_IMM, MASK_W|MASK_MO, PFX_WIDE, 4 },
+        { UNKNOWN,  NONE,   0,              0,        1 },
+        { UNKNOWN,  NONE,   0,              0,        1 },
+        { UNKNOWN,  NONE,   0,              0,        1 },
+        { UNKNOWN,  NONE,   0,              0,        1 },
+        { UNKNOWN,  NONE,   0,              0,        1 },
+        { UNKNOWN,  NONE,   0,              0,        1 },
+        { UNKNOWN,  NONE,   0,              0,        1 },
     },
     // [0x09]: 0xD0 (0b1101 0000)
     {
-        { ROL,  RM_V,   0,            PFX_WIDE, 2 },
-        { ROR,  RM_V,   0,            PFX_WIDE, 2 },
-        { RCL,  RM_V,   0,            PFX_WIDE, 2 },
-        { RCR,  RM_V,   0,            PFX_WIDE, 2 },
-        { SHL,  RM_V,   0,            PFX_WIDE, 2 },
-        { SHR,  RM_V,   0,            PFX_WIDE, 2 },
+        { ROL,      RM_V,   0,            PFX_WIDE, 2 },
+        { ROR,      RM_V,   0,            PFX_WIDE, 2 },
+        { RCL,      RM_V,   0,            PFX_WIDE, 2 },
+        { RCR,      RM_V,   0,            PFX_WIDE, 2 },
+        { SHL,      RM_V,   0,            PFX_WIDE, 2 },
+        { SHR,      RM_V,   0,            PFX_WIDE, 2 },
         { UNKNOWN,  NONE,   0,            0,        1 },
-        { SAR,  RM_V,   0,            PFX_WIDE, 2 },
+        { SAR,      RM_V,   0,            PFX_WIDE, 2 },
     },
     // [0x0A]: 0xD1 (0b1101 0001)
     {
-        { ROL,  RM_V,   MASK_W,          PFX_WIDE, 2 },
-        { ROR,  RM_V,   MASK_W,          PFX_WIDE, 2 },
-        { RCL,  RM_V,   MASK_W,          PFX_WIDE, 2 },
-        { RCR,  RM_V,   MASK_W,          PFX_WIDE, 2 },
-        { SHL,  RM_V,   MASK_W,          PFX_WIDE, 2 },
-        { SHR,  RM_V,   MASK_W,          PFX_WIDE, 2 },
-        { UNKNOWN,  NONE,   0,            0,        1 },
-        { SAR,  RM_V,   MASK_W,          PFX_WIDE, 2 },
+        { ROL,      RM_V,   MASK_W,          PFX_WIDE, 2 },
+        { ROR,      RM_V,   MASK_W,          PFX_WIDE, 2 },
+        { RCL,      RM_V,   MASK_W,          PFX_WIDE, 2 },
+        { RCR,      RM_V,   MASK_W,          PFX_WIDE, 2 },
+        { SHL,      RM_V,   MASK_W,          PFX_WIDE, 2 },
+        { SHR,      RM_V,   MASK_W,          PFX_WIDE, 2 },
+        { UNKNOWN,  NONE,   0,               0,        1 },
+        { SAR,      RM_V,   MASK_W,          PFX_WIDE, 2 },
     },
     // [0x0B]: 0xD2 (0b1101 0010)
     {
-        { ROL,  RM_V,   MASK_V,          PFX_WIDE, 2 },
-        { ROR,  RM_V,   MASK_V,          PFX_WIDE, 2 },
-        { RCL,  RM_V,   MASK_V,          PFX_WIDE, 2 },
-        { RCR,  RM_V,   MASK_V,          PFX_WIDE, 2 },
-        { SHL,  RM_V,   MASK_V,          PFX_WIDE, 2 },
-        { SHR,  RM_V,   MASK_V,          PFX_WIDE, 2 },
-        { UNKNOWN,  NONE,   0,            0,        1 },
-        { SAR,  RM_V,   MASK_V,          PFX_WIDE, 2 },
+        { ROL,      RM_V,   MASK_V,          PFX_WIDE, 2 },
+        { ROR,      RM_V,   MASK_V,          PFX_WIDE, 2 },
+        { RCL,      RM_V,   MASK_V,          PFX_WIDE, 2 },
+        { RCR,      RM_V,   MASK_V,          PFX_WIDE, 2 },
+        { SHL,      RM_V,   MASK_V,          PFX_WIDE, 2 },
+        { SHR,      RM_V,   MASK_V,          PFX_WIDE, 2 },
+        { UNKNOWN,  NONE,   0,               0,        1 },
+        { SAR,      RM_V,   MASK_V,          PFX_WIDE, 2 },
     },
     // [0x0C]: 0xD3 (0b1101 0011)
     {
-        { ROL,  RM_V,   MASK_V|MASK_W,      PFX_WIDE, 2 },
-        { ROR,  RM_V,   MASK_V|MASK_W,      PFX_WIDE, 2 },
-        { RCL,  RM_V,   MASK_V|MASK_W,      PFX_WIDE, 2 },
-        { RCR,  RM_V,   MASK_V|MASK_W,      PFX_WIDE, 2 },
-        { SHL,  RM_V,   MASK_V|MASK_W,      PFX_WIDE, 2 },
-        { SHR,  RM_V,   MASK_V|MASK_W,      PFX_WIDE, 2 },
-        { UNKNOWN,  NONE,   0,            0,        1 },
-        { SAR,  RM_V,   MASK_V| MASK_W,     PFX_WIDE, 2 },
+        { ROL,      RM_V,   MASK_V|MASK_W,      PFX_WIDE, 2 },
+        { ROR,      RM_V,   MASK_V|MASK_W,      PFX_WIDE, 2 },
+        { RCL,      RM_V,   MASK_V|MASK_W,      PFX_WIDE, 2 },
+        { RCR,      RM_V,   MASK_V|MASK_W,      PFX_WIDE, 2 },
+        { SHL,      RM_V,   MASK_V|MASK_W,      PFX_WIDE, 2 },
+        { SHR,      RM_V,   MASK_V|MASK_W,      PFX_WIDE, 2 },
+        { UNKNOWN,  NONE,   0,                  0,        1 },
+        { SAR,      RM_V,   MASK_V| MASK_W,     PFX_WIDE, 2 },
     },
     // [0x0D]: 0xF6 (0b1111 0110)
     {
-        { TEST, RM_IMM, 0,            PFX_WIDE, 3 },
+        { TEST,     RM_IMM, 0,            PFX_WIDE, 3 },
         { UNKNOWN,  NONE,   0,            0,        1 },
-        { NOT,  RM,     0,            PFX_WIDE, 2 },
-        { NEG,  RM,     0,            PFX_WIDE, 2 },
-        { MUL,  RM,     0,            PFX_WIDE, 2 },
-        { IMUL, RM,     0,            PFX_WIDE, 2 },
-        { DIV,  RM,     0,            PFX_WIDE, 2 },
-        { IDIV, RM,     0,            PFX_WIDE, 2 },
+        { NOT,      RM,     0,            PFX_WIDE, 2 },
+        { NEG,      RM,     0,            PFX_WIDE, 2 },
+        { MUL,      RM,     0,            PFX_WIDE, 2 },
+        { IMUL,     RM,     0,            PFX_WIDE, 2 },
+        { DIV,      RM,     0,            PFX_WIDE, 2 },
+        { IDIV,     RM,     0,            PFX_WIDE, 2 },
     },
     // [0x0E]: 0xF7 (0b1111 0111)
     {
-        { TEST, RM_IMM, MASK_W,          PFX_WIDE, 4 },
-        { UNKNOWN,  NONE,   0,            0,        1 },
-        { NOT,  RM,     MASK_W,          PFX_WIDE, 2 },
-        { NEG,  RM,     MASK_W,          PFX_WIDE, 2 },
-        { MUL,  RM,     MASK_W,          PFX_WIDE, 2 },
-        { IMUL, RM,     MASK_W,          PFX_WIDE, 2 },
-        { DIV,  RM,     MASK_W,          PFX_WIDE, 2 },
-        { IDIV, RM,     MASK_W,          PFX_WIDE, 2 },
+        { TEST,     RM_IMM, MASK_W,          PFX_WIDE, 4 },
+        { UNKNOWN,  NONE,   0,               0,        1 },
+        { NOT,      RM,     MASK_W,          PFX_WIDE, 2 },
+        { NEG,      RM,     MASK_W,          PFX_WIDE, 2 },
+        { MUL,      RM,     MASK_W,          PFX_WIDE, 2 },
+        { IMUL,     RM,     MASK_W,          PFX_WIDE, 2 },
+        { DIV,      RM,     MASK_W,          PFX_WIDE, 2 },
+        { IDIV,     RM,     MASK_W,          PFX_WIDE, 2 },
     },
     // [0x0F]: 0xFE (0b1111 1110)
     {
-        { INC,  RM,     0,            PFX_WIDE, 2 },
-        { DEC,  RM,     0,            PFX_WIDE, 2 },
+        { INC,      RM,     0,            PFX_WIDE, 2 },
+        { DEC,      RM,     0,            PFX_WIDE, 2 },
         { UNKNOWN,  NONE,   0,            0,        1 },
         { UNKNOWN,  NONE,   0,            0,        1 },
         { UNKNOWN,  NONE,   0,            0,        1 },
@@ -599,14 +599,14 @@ InstructionData instruction_table_extd[17][8] = {
     },
     // [0x10]: 0xFF (0b1111 1111)
     {
-        { INC,  RM,     MASK_W|MASK_MO,     PFX_WIDE, 2 },
-        { DEC,  RM,     MASK_W|MASK_MO,     PFX_WIDE, 2 },
-        { CALL, RM,     MASK_W,          0,        2 },
-        { CALL, RM,     MASK_W|MASK_MO,     PFX_FAR,  2 },
-        { JMP,  RM,     MASK_W,          0,        2 },
-        { JMP,  RM,     MASK_W|MASK_MO,     PFX_FAR,  2 },
-        { PUSH, RM,     MASK_W|MASK_MO,     PFX_WIDE, 2 },
-        { UNKNOWN,  NONE,   0,            PFX_WIDE, 1 },
+        { INC,      RM,     MASK_W|MASK_MO,  PFX_WIDE, 2 },
+        { DEC,      RM,     MASK_W|MASK_MO,  PFX_WIDE, 2 },
+        { CALL,     RM,     MASK_W,          0,        2 },
+        { CALL,     RM,     MASK_W|MASK_MO,  PFX_FAR,  2 },
+        { JMP,      RM,     MASK_W,          0,        2 },
+        { JMP,      RM,     MASK_W|MASK_MO,  PFX_FAR,  2 },
+        { PUSH,     RM,     MASK_W|MASK_MO,  PFX_WIDE, 2 },
+        { UNKNOWN,  NONE,   0,               PFX_WIDE, 1 },
     },
 };
 
@@ -720,8 +720,7 @@ const char *get_instruction_name(TYPE type) {
     return "<unknown>";
 };
 
-int get_jmp_offset(Instruction *instruction)
-{
+int get_jmp_offset(Instruction *instruction) {
     int    label_addr = 0;
     uint8  tmp8;
     uint16 tmp16;
@@ -955,8 +954,7 @@ static void decode_addr (FILE *out, Instruction *instruction);
 static void decode_naddr(FILE *out, Instruction *instruction);
 static void decode_faddr(FILE *out, Instruction *instruction);
 
-void decode_rm(FILE *out, Instruction *instruction)
-{
+void decode_rm(FILE *out, Instruction *instruction) {
     int   len;
     char  ea_str[64];
     char *op;
@@ -1012,8 +1010,7 @@ void decode_rm(FILE *out, Instruction *instruction)
     fprintf(out, "%s", op);
 }
 
-void decode_reg(FILE *out, Instruction *instruction)
-{
+void decode_reg(FILE *out, Instruction *instruction) {
     uint8 w, reg;
 
     w   = W(instruction->structure.flags);
@@ -1043,45 +1040,38 @@ void decode_acc(FILE *out, Instruction *instruction)
     fprintf(out, "%s", regs[W(instruction->structure.flags)][0]);
 }
 
-void decode_dx(FILE *out, Instruction *instruction)
-{
+void decode_dx(FILE *out, Instruction *instruction) {
     (void)instruction;
     fprintf(out, "dx");
 }
 
-void decode_imm8(FILE *out, Instruction *instruction)
-{
+void decode_imm8(FILE *out, Instruction *instruction) {
     fprintf(out, "%u", instruction->data & 0xFF);
 }
 
-void decode_mem(FILE *out, Instruction *instruction)
-{
+void decode_mem(FILE *out, Instruction *instruction) {
     fprintf(out, "[%u]", instruction->data & 0xFFFF);
 }
 
-void decode_addr(FILE *out, Instruction *instruction)
-{
+void decode_addr(FILE *out, Instruction *instruction) {
     int addr = get_jmp_offset(instruction);
     assert(addr != -1);
 
     fprintf(out, "label_%d", addr);
 }
 
-void decode_naddr(FILE *out, Instruction *instruction)
-{
+void decode_naddr(FILE *out, Instruction *instruction) {
     int16_t addr = get_jmp_offset(instruction);
     assert(addr != -1);
 
     fprintf(out, "%d", addr);
 }
 
-void decode_faddr(FILE *out, Instruction *instruction)
-{
+void decode_faddr(FILE *out, Instruction *instruction) {
     fprintf(out, "%u:%u", instruction->data_ext, instruction->data);
 }
 
-int decode_instruction(FILE *out, Instruction *instruction)
-{
+int decode_instruction(FILE *out, Instruction *instruction) {
     decode_fn op1 = NULL, op2 = NULL, tmp;
 
     if (!out || !instruction) {
