@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <assert.h>
 #include <string.h>
+#include "bitmap.h"
 
 typedef unsigned int uint;
 typedef uint8_t      uint8;
@@ -53,12 +54,12 @@ typedef int16_t      int16;
 #define ESC2(byte) (((byte) >> 3) & 0b111)
 #define EXTD(byte) (((byte) >> 3) & 0b111)
 
-#define SGMNT_OP(prefixes) (((prefixes) >> 4) & 0b11)
-#define FIELD_MOD(fields)  (((fields) >>  0)  & 0b11)
-#define FIELD_SR(fields)   (((fields) >>  2)  & 0b11)
-#define FIELD_RM(fields)   (((fields) >>  4)  & 0b111)
-#define FIELD_REG(fields)  (((fields) >>  7)  & 0b111)
-#define FIELD_ESC(fields)  (((fields) >> 10)  & 0b111111)
+#define SGMNT_OP(prefixes) (((prefixes) >>  4)  & 0b11)
+#define FIELD_MOD(fields)  (((fields)   >>  0)  & 0b11)
+#define FIELD_SR(fields)   (((fields)   >>  2)  & 0b11)
+#define FIELD_RM(fields)   (((fields)   >>  4)  & 0b111)
+#define FIELD_REG(fields)  (((fields)   >>  7)  & 0b111)
+#define FIELD_ESC(fields)  (((fields)   >> 10)  & 0b111111)
 
 static char *segregs[4] = { "es", "cs", "ss", "ds" };
 static char *regs[2][8] = {
@@ -726,16 +727,15 @@ int get_jmp_offset(Instruction *instruction) {
     uint16 tmp16;
 
     switch (instruction->structure.format) {
-    case JMP_SHORT:
-        tmp8 = instruction->data & 0xFF;
-        label_addr = instruction->offset + 2 + *((int8 *)&tmp8);
-        break;
-    case  JMP_NEAR:
-        tmp16 = instruction->data;
-        label_addr = instruction->offset + 3 + *((int16 *)&tmp16);
-        break;
-    default:
-        return -1;
+        case JMP_SHORT:
+            tmp8 = instruction->data & 0xFF;
+            label_addr = instruction->offset + 2 + *((int8 *)&tmp8);
+            break;
+        case  JMP_NEAR:
+            tmp16 = instruction->data;
+            label_addr = instruction->offset + 3 + *((int16 *)&tmp16);
+            break;
+        default: return -1;
     }
 
     return label_addr;
@@ -832,8 +832,7 @@ int parse_instruction(Instruction *instruction,  uint8 * const data, uint size, 
         case RM_REG:
             instruction->fields |= (REG(raw[1]) & MASK_REG) << 7;
             break;
-        default:
-            break;
+        default: break;
     };
 
 
@@ -887,8 +886,11 @@ int parse_instruction(Instruction *instruction,  uint8 * const data, uint size, 
 
 int scan_instructions(Instruction *const instructions, uint count, uint8 *const data, uint size) {
     uint i;
+    int rc = 0;
     uint offset = 0;
     uint8 prefixes = 0;
+    struct bitmap labels;
+    int label_addr = 0;
     Instruction instruction;
 
     // we want to scan and return a count
@@ -909,9 +911,24 @@ int scan_instructions(Instruction *const instructions, uint count, uint8 *const 
         return count;
     }
 
+    if (bitmap_init(&labels, size) < 0) {
+        fprintf(stderr, "failed to initialize bitmap for labels\n");
+        rc = -3;
+        goto free_and_exit;
+}
+
     for (i = 0; i < count && offset < size; ++i) {
         if (parse_instruction(instructions + i, data, size, offset) < 0) {
-            return -1;
+            fprintf(stderr, "failed to get instruction data\n");
+            rc = -1;
+            goto free_and_exit;
+        }
+
+        if (instructions[i].structure.type == UNKNOWN) {
+            fprintf(stderr, "unknown instruction encountered: "
+                    "0x%02X\n", data[offset]);
+            rc = -2;
+            goto free_and_exit;
         }
 
         switch (instructions[i].structure.type) {
@@ -934,9 +951,27 @@ int scan_instructions(Instruction *const instructions, uint count, uint8 *const 
             prefixes = 0;
         }
 
+        label_addr = get_jmp_offset(instructions + i);
+        if (label_addr >= 0) {
+            bitmap_set_bit(&labels, label_addr);
+        }
+
         offset += instructions[i].structure.size;
     }
-    return 0;
+
+    // setting F_LB flag for label generation
+    for (i = 0, offset = 0; i < count && offset < size; ++i) {
+        if (bitmap_get_bit(&labels, offset) > 0) {
+                instructions[i].structure.flags |= MASK_LB;
+        }
+
+        offset += instructions[i].structure.size;
+    }
+
+free_and_exit:
+    bitmap_free(&labels);
+
+    return rc;
 }; 
 
 typedef void (*decode_fn)(FILE *, Instruction *);
@@ -963,7 +998,16 @@ void decode_rm(FILE *out, Instruction *instruction) {
 
     int16 disp = *((int16 *)&instruction->displacement);
 
-    static char *ea_base[8] = { "bx + si", "bx + di", "bp + si", "bp + di", "si", "di", "bp", "bx" };
+    static char *ea_base[8] = {
+        "bx + si", 
+        "bx + di", 
+        "bp + si", 
+        "bp + di", 
+        "si", 
+        "di", 
+        "bp", 
+        "bx"
+    };
 
     w   = W(instruction->structure.flags);
     mod = FIELD_MOD(instruction->fields);
@@ -1003,7 +1047,7 @@ void decode_rm(FILE *out, Instruction *instruction) {
         }
 
         if (instruction->structure.prefixes & PFX_SGMNT) {
-            fprintf(out, "%s: ", segregs[SGMNT_OP(instruction->structure.prefixes)]);
+            fprintf(out, "%s:", segregs[SGMNT_OP(instruction->structure.prefixes)]);
         }
     }
 
